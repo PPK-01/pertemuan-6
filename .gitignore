@@ -44,3 +44,6 @@ example
 
 # Claude Code (pengaturan lokal per developer)
 .claude/settings.local.json
+
+.agents/
+skills-lock.json
