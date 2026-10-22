@@ -1,6 +1,6 @@
 # SRS & Rencana Kerja: Aplikasi Presensi Praktikum (React Native)
 
-PM: Dhimas · Tim: Ibrahim, Elang · Sprint: 1 · Versi 1.1
+PM: Dhimas · Tim: Ibrahim, Elang · Sprint: 1 · Versi 1.2
 
 ## 1. Pendahuluan
 
@@ -33,18 +33,26 @@ Praktikum dummy: minimal 2 (mis. Pemrograman Mobile, Basis Data). Sesi awal dumm
 ## 3. Model Data (kontrak; versi awal ditulis Elang, setelah di-merge dimiliki Ibrahim)
 
 ```
+KELAS_LIST          = ['A', 'B'] as const                           -> Kelas
+PRAKTIKUM_LIST      = ['Pemrograman Mobile', 'Basis Data'] as const -> Praktikum
+SESSION_STATUS_LIST = ['scheduled', 'open', 'closed'] as const      -> SessionStatus
+                      // urutan dipakai chip filter
 Role = 'praktikan' | 'asisten'
-SessionStatus = 'scheduled' | 'open' | 'closed'
 
-User { id, name, role, kelas?: string }       // kelas hanya untuk praktikan
-Session { id, praktikum, kelas, topik, ruang, startAt (ISO), endAt (ISO),
-          status: SessionStatus, code: string, createdBy: userId,
-          openedAt?, closedAt? }
+User { id, name, role, kelas?: Kelas }        // kelas hanya untuk praktikan
+Session { id, praktikum: Praktikum, kelas: Kelas, topik, ruang,
+          startAt (ISO), endAt (ISO), status: SessionStatus,
+          code: string,                       // 4 digit, nol di depan terjaga (mis. '0427')
+          createdBy: userId, openedAt?, closedAt? }
 Attendance { id, sessionId, userId, timestamp (ISO) }
 
+AttendFailReason = 'SESSION_NOT_OPEN' | 'ALREADY_ATTENDED' | 'INVALID_CODE' | 'NOT_IN_CLASS'
 AttendResult =
   | { ok: true, attendance: Attendance }
-  | { ok: false, reason: 'SESSION_NOT_OPEN' | 'ALREADY_ATTENDED' | 'INVALID_CODE' | 'NOT_IN_CLASS' }
+  | { ok: false, reason: AttendFailReason }
+
+CreateSessionInput = Pick<Session, praktikum | kelas | topik | ruang | startAt | endAt | createdBy>
+                                              // id, status, code, openedAt, closedAt dibuat store
 
 Rekap {
   total: number                               // jumlah praktikan di kelas sesi
@@ -53,24 +61,30 @@ Rekap {
 }
 ```
 
+Semua waktu disimpan sebagai ISO 8601 hasil `toISOString()` (UTC) dan ditampilkan dalam waktu lokal lewat `src/utils/time.ts` (`formatDate`, `formatTime`, `formatDateTime`; locale `id-ID`, 24 jam). Parsing dan validasi teks tanggal/jam dilakukan form asisten (`SessionForm` di `src/features/asisten/`). `code` dibuat store saat `createSession` lewat `createSessionCode()` di `src/utils/id.ts`; UI asisten hanya menampilkannya saat status `'open'`.
+
 ### Kontrak store (`src/store/appStore.ts`)
 
 ```
-State : role, currentUserId, users, sessions, attendances
+State : role: Role | null, currentUserId: string | null,
+        users: User[], sessions: Session[], attendances: Attendance[]
 Aksi  : setRole(role), setCurrentUser(id), resetIdentity()
-        createSession(input) -> Session            // status awal 'scheduled'
-        openSession(id)  -> boolean                // scheduled -> open
-        closeSession(id) -> boolean                // open -> closed
+        createSession(input: CreateSessionInput) -> Session  // status awal 'scheduled'; id & code dibuat store
+        openSession(id)  -> boolean                // scheduled -> open, mengisi openedAt
+        closeSession(id) -> boolean                // open -> closed, mengisi closedAt
         submitAttendance(sessionId, userId, code) -> AttendResult
-Selector: selectSessionsForUser(userId), selectSessionById(id),
-          selectAttendanceBySession(sessionId), selectAttendanceByUser(userId),
-          hasAttended(sessionId, userId)
+Selector (factory: selectX(arg) -> (state) => hasil):
+          selectSessionsForUser(userId) -> Session[]
+          selectSessionById(id) -> Session | null
+          selectAttendanceBySession(sessionId) -> Attendance[]
+          selectAttendanceByUser(userId) -> Attendance[]
+          hasAttended(sessionId, userId) -> boolean
 Hook baca (dipakai layar):
-          useSessionsForUser(userId)               // urut startAt
-          useSessionById(id)
-          useAttendanceBySession(sessionId)
-          useAttendanceByUser(userId)
-          useHasAttended(sessionId, userId)
+          useSessionsForUser(userId) -> Session[]  // urut startAt
+          useSessionById(id) -> Session | null
+          useAttendanceBySession(sessionId) -> Attendance[]
+          useAttendanceByUser(userId) -> Attendance[]
+          useHasAttended(sessionId, userId) -> boolean
           useRekap(sessionId) -> Rekap | null      // null bila sesi tidak ditemukan
 Fungsi murni: computeRekap(session, users, attendances) -> Rekap
 ```
@@ -82,20 +96,24 @@ Layar membaca data turunan **hanya lewat hook baca**. Alasannya, selector yang m
 ### Kontrak theme (`src/theme/`; versi awal ditulis Elang, setelah di-merge dimiliki Ibrahim)
 
 ```
-colors.ts     : primary, onPrimary, background, surface, border,
+colors.ts     : type ColorPair = { bg, text }
+                primary, onPrimary, background, surface, border,
+                borderStrong,  // batas TextField & Chip belum terpilih; kontras 3:1
+                               // thd background, hitung ulang sebelum mengubah
                 text, textMuted, overlay,
-                disabled { bg, text },
-                feedback { success, danger, info } -> { bg, text },
-                status   { scheduled, open, closed } -> { bg, text }
-                         // satisfies Record<SessionStatus, ...>
-spacing.ts    : spacing  xs 4 · sm 8 · md 12 · lg 16 · xl 24 · xxl 32
+                disabled: ColorPair,
+                feedback { success, danger, info } -> ColorPair,
+                status   { scheduled, open, closed } -> ColorPair
+                         // satisfies Record<SessionStatus, ColorPair>
+spacing.ts    : mengekspor spacing, radius, layout
+                spacing  xs 4 · sm 8 · md 12 · lg 16 · xl 24 · xxl 32
                 radius   sm 6 · md 10 · lg 16 · full 999
                 layout   minTouch 44 · maxContentWidth 600
 typography.ts : display · title · heading · body · label · caption
                 (TextStyle lengkap dengan lineHeight, font sistem)
 ```
 
-Nama token semantik (bukan nama warna) agar dark mode bisa ditambah kelak tanpa mengganti komponen. Tidak ada token shadow; `Card` memakai border. Kontras teks terhadap latar minimal 4.5:1 (NFR-04).
+Nama token semantik (bukan nama warna) agar dark mode bisa ditambah kelak tanpa mengganti komponen. Tidak ada token shadow; `Card` memakai border. Kontras teks terhadap latar minimal 4.5:1 (NFR-04). Token diimpor per file (`@/theme/colors`, `@/theme/spacing`, `@/theme/typography`) tanpa barrel `index.ts`.
 
 ## 4. Kebutuhan Fungsional
 
@@ -182,8 +200,11 @@ src/
   utils/ (time.ts, id.ts)          IBRAHIM
   components/ui/                   ELANG     Button, TextField, Card, Chip,
                                              EmptyState, BottomSheet, Banner,
-                                             Screen (wrapper responsif)
-  components/session/              ELANG     SessionCard, StatusBadge, SessionInfo
+                                             Screen (wrapper responsif),
+                                             pressable.ts (PRESSED_OPACITY)
+  components/session/              ELANG     SessionCard, StatusBadge, SessionInfo,
+                                             statusLabel.ts (STATUS_LABEL),
+                                             sessionTime.ts (formatSessionTime)
   features/praktikan/              IBRAHIM   PresensiForm, PresensiSheet, RiwayatItem
   features/asisten/                ELANG     SessionForm, StatusActionSheet, RekapList
   global.css                       -         bawaan template, dibiarkan
@@ -198,7 +219,7 @@ File contoh bawaan template (`src/app/explore.tsx`, isi `src/components/`, `src/
 ### Aturan kepemilikan
 
 1. **Satu file = satu pemilik.** Hanya pemilik yang boleh mengedit. Butuh perubahan di file orang lain? Buka issue/PR kecil ke pemiliknya atau minta lewat chat, jangan edit sendiri.
-2. **Shared UI lewat props saja.** Komponen di `components/` tidak boleh tahu soal peran atau store. Aksi spesifik peran dimasukkan lewat props (`actions`, `onPress`, `children`).
+2. **Shared UI lewat props saja.** Komponen di `components/` tidak boleh mengimpor store atau tahu soal peran. Selain `react` dan `react-native`, komponen hanya boleh mengimpor `@/types`, `@/theme/*`, `@/utils/time`, `react-native-safe-area-context`, dan sesama komponen (impor langsung per file). Aksi spesifik peran dimasukkan lewat props (mis. `onPress`, `primaryAction`/`secondaryAction`, `footer`, `children`).
 3. **Tidak ada barrel `index.ts` bersama.** Impor langsung dari file komponen supaya tidak ada file yang sering diedit berdua.
 4. **Tidak menyentuh `package.json` / lockfile** setelah Fase 0.
 5. **Layar hanya memanggil aksi dan hook baca dari store.** Aturan bisnis tidak diduplikasi di layar. Filter tampilan berbasis state UI (mis. chip status di daftar sesi asisten) boleh di layar.
@@ -399,3 +420,4 @@ Setiap selesai satu fitur: ringkas apa yang dibuat, file yang diubah (harus dala
 | --- | --- |
 | 1.0 | Versi awal dari PM |
 | 1.1 | Routing di `src/app/` (template SDK 57); development build menggantikan Expo Go; pembersihan template oleh Elang; versi awal `types` & `theme` ditulis Elang lalu dikembalikan ke Ibrahim; kontrak theme (light mode); tipe `Rekap`, hook baca store, `computeRekap`/`useRekap`; urutan sesi dan rekap; aturan commit tanpa co-author; prompt Elang memakai 6 skill dan git dijalankan manusia |
+| 1.2 | Mencatat keputusan Fase 0 yang sudah diterapkan di kode: `KELAS_LIST`/`PRAKTIKUM_LIST`/`SESSION_STATUS_LIST` beserta tipe turunannya; `Session.code` 4 digit; `CreateSessionInput` dan `AttendFailReason`; waktu ISO (UTC) + formatter lokal di `utils/time.ts`; tanda tangan store sesuai kode; theme: `borderStrong`, `ColorPair`, ekspor `spacing.ts`, tanpa barrel; helper komponen (`pressable.ts`, `statusLabel.ts`, `sessionTime.ts`); daftar impor yang diizinkan untuk `components/` |
