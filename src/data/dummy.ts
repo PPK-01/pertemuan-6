@@ -1,0 +1,75 @@
+import type { Attendance, Session, User } from '@/types';
+
+export const dummyUsers: User[] = [
+  { id: 'u-dina', name: 'Dina', role: 'asisten' },
+  { id: 'u-raka', name: 'Raka', role: 'asisten' },
+  { id: 'u-bagas', name: 'Bagas Pratama', role: 'praktikan', kelas: 'A' },
+  { id: 'u-citra', name: 'Citra Lestari', role: 'praktikan', kelas: 'A' },
+  { id: 'u-dimas', name: 'Dimas Saputra', role: 'praktikan', kelas: 'A' },
+  { id: 'u-eka', name: 'Eka Putri', role: 'praktikan', kelas: 'B' },
+  { id: 'u-fajar', name: 'Fajar Nugroho', role: 'praktikan', kelas: 'B' },
+  { id: 'u-gita', name: 'Gita Maharani', role: 'praktikan', kelas: 'B' },
+];
+
+export const dummySessions: Session[] = [
+  {
+    id: 's-mobile-a-scheduled',
+    praktikum: 'Pemrograman Mobile',
+    kelas: 'A',
+    topik: 'Pengenalan React Native',
+    ruang: 'Lab 1',
+    startAt: '2026-10-23T02:00:00.000Z',
+    endAt: '2026-10-23T04:00:00.000Z',
+    status: 'scheduled',
+    code: '0427',
+    createdBy: 'u-dina',
+  },
+  {
+    id: 's-basis-b-open',
+    praktikum: 'Basis Data',
+    kelas: 'B',
+    topik: 'Normalisasi',
+    ruang: 'Lab 2',
+    startAt: '2026-10-22T02:00:00.000Z',
+    endAt: '2026-10-22T04:00:00.000Z',
+    status: 'open',
+    code: '1358',
+    createdBy: 'u-raka',
+    openedAt: '2026-10-22T02:05:00.000Z',
+  },
+  {
+    id: 's-mobile-b-closed',
+    praktikum: 'Pemrograman Mobile',
+    kelas: 'B',
+    topik: 'State Management',
+    ruang: 'Lab 1',
+    startAt: '2026-10-21T02:00:00.000Z',
+    endAt: '2026-10-21T04:00:00.000Z',
+    status: 'closed',
+    code: '2469',
+    createdBy: 'u-dina',
+    openedAt: '2026-10-21T02:00:00.000Z',
+    closedAt: '2026-10-21T04:00:00.000Z',
+  },
+  {
+    id: 's-basis-a-closed',
+    praktikum: 'Basis Data',
+    kelas: 'A',
+    topik: 'SQL Dasar',
+    ruang: 'Lab 2',
+    startAt: '2026-10-20T06:00:00.000Z',
+    endAt: '2026-10-20T08:00:00.000Z',
+    status: 'closed',
+    code: '9876',
+    createdBy: 'u-raka',
+    openedAt: '2026-10-20T06:00:00.000Z',
+    closedAt: '2026-10-20T08:00:00.000Z',
+  },
+];
+
+export const dummyAttendances: Attendance[] = [
+  { id: 'a-1', sessionId: 's-mobile-b-closed', userId: 'u-eka', timestamp: '2026-10-21T02:10:00.000Z' },
+  { id: 'a-2', sessionId: 's-mobile-b-closed', userId: 'u-gita', timestamp: '2026-10-21T02:25:00.000Z' },
+  { id: 'a-3', sessionId: 's-basis-a-closed', userId: 'u-bagas', timestamp: '2026-10-20T06:08:00.000Z' },
+  { id: 'a-4', sessionId: 's-basis-a-closed', userId: 'u-dimas', timestamp: '2026-10-20T06:20:00.000Z' },
+];
