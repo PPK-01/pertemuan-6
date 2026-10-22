@@ -16,27 +16,25 @@ export type SessionInfoProps = {
 };
 
 export function SessionInfo({ session, style }: SessionInfoProps) {
+  const valueText = (text: string) => <Text style={styles.valueText}>{text}</Text>;
+
+  const rows: { label: string; value: ReactNode }[] = [
+    { label: 'Praktikum', value: valueText(session.praktikum) },
+    { label: 'Kelas', value: valueText(session.kelas) },
+    { label: 'Topik', value: valueText(session.topik) },
+    { label: 'Ruang', value: valueText(session.ruang) },
+    { label: 'Waktu', value: valueText(formatSessionTime(session)) },
+    { label: 'Status', value: <StatusBadge status={session.status} /> },
+  ];
+
   return (
     <View style={[styles.container, style]}>
-      <InfoRow label="Praktikum">{session.praktikum}</InfoRow>
-      <InfoRow label="Kelas">{session.kelas}</InfoRow>
-      <InfoRow label="Topik">{session.topik}</InfoRow>
-      <InfoRow label="Ruang">{session.ruang}</InfoRow>
-      <InfoRow label="Waktu">{formatSessionTime(session)}</InfoRow>
-      <InfoRow label="Status">
-        <StatusBadge status={session.status} />
-      </InfoRow>
-    </View>
-  );
-}
-
-function InfoRow({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <View style={styles.row}>
-      <Text style={styles.label}>{label}</Text>
-      <View style={styles.value}>
-        {typeof children === 'string' ? <Text style={styles.valueText}>{children}</Text> : children}
-      </View>
+      {rows.map(({ label, value }) => (
+        <View key={label} style={styles.row}>
+          <Text style={styles.label}>{label}</Text>
+          <View style={styles.value}>{value}</View>
+        </View>
+      ))}
     </View>
   );
 }
