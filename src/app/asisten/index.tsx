@@ -70,6 +70,26 @@ const BUTTON_VARIANTS: NonNullable<ButtonProps['variant']>[] = ['primary', 'seco
 type StatusFilter = SessionStatus | 'all';
 const FILTERS: StatusFilter[] = ['all', ...SESSION_STATUS_LIST];
 
+type SheetScenario = 'standar' | 'panjang' | 'label' | 'satu' | 'hitung';
+
+const SHEET_SCENARIOS: { id: SheetScenario; label: string }[] = [
+  { id: 'standar', label: 'Sheet standar' },
+  { id: 'panjang', label: 'Sheet isi panjang' },
+  { id: 'label', label: 'Sheet label panjang' },
+  { id: 'satu', label: 'Sheet satu aksi' },
+  { id: 'hitung', label: 'Sheet penghitung tekan' },
+];
+
+// Cukup panjang untuk melewati tinggi layar di landscape, supaya isi sheet harus di-scroll.
+const LONG_PARAGRAPHS = [
+  'Presensi hanya bisa dilakukan selama sesi berstatus Dibuka. Setelah asisten menutup sesi, kode tidak berlaku lagi.',
+  'Kode sesi terdiri dari 4 digit dan dibagikan asisten di kelas. Nol di depan tetap dihitung, jadi 0427 berbeda dengan 427.',
+  'Setiap praktikan hanya bisa presensi satu kali per sesi. Percobaan kedua ditolak dengan pesan yang menjelaskan alasannya.',
+  'Waktu hadir dicatat saat konfirmasi ditekan, bukan saat kode diketik. Pastikan kode sudah benar sebelum konfirmasi.',
+  'Sesi hanya terlihat oleh praktikan di kelas yang sama. Bila sesi tidak muncul, cek kembali kelas pada identitasmu.',
+  'Rekap kehadiran di sisi asisten ter-update otomatis begitu presensi tercatat, tanpa perlu memuat ulang layar.',
+];
+
 function noop() {}
 
 export default function ComponentPlayground() {
@@ -77,8 +97,16 @@ export default function ComponentPlayground() {
   const [name, setName] = useState('');
   const [filter, setFilter] = useState<StatusFilter>('all');
   const [sheetVisible, setSheetVisible] = useState(false);
+  const [openScenario, setOpenScenario] = useState<SheetScenario | null>(null);
+  const [actionCount, setActionCount] = useState(0);
+  const [form, setForm] = useState({ topik: '', ruang: '', tanggal: '', jam: '' });
+  const [formNote, setFormNote] = useState('Belum disimpan');
 
   const closeSheet = () => setSheetVisible(false);
+  const closeScenario = () => setOpenScenario(null);
+  const cancelAction = { label: 'Batal', onPress: closeScenario };
+  const updateForm = (key: keyof typeof form) => (text: string) =>
+    setForm((prev) => ({ ...prev, [key]: text }));
 
   return (
     <Screen>
@@ -192,7 +220,113 @@ export default function ComponentPlayground() {
             />
           ))}
         </Section>
+
+        <Section title="Skenario BottomSheet">
+          <Text style={styles.note}>Aksi terpicu: {actionCount} kali</Text>
+          {SHEET_SCENARIOS.map((scenario) => (
+            <Button
+              key={scenario.id}
+              label={scenario.label}
+              variant="secondary"
+              onPress={() => setOpenScenario(scenario.id)}
+            />
+          ))}
+        </Section>
+
+        {/* Sengaja paling bawah: field terakhir dan tombol Simpan yang paling mudah tertutup keyboard. */}
+        <Section title="Form keyboard">
+          <Text style={styles.note}>Status: {formNote}</Text>
+          <TextField
+            label="Topik"
+            value={form.topik}
+            onChangeText={updateForm('topik')}
+            placeholder="mis. Navigasi Expo Router"
+          />
+          <TextField
+            label="Ruang"
+            value={form.ruang}
+            onChangeText={updateForm('ruang')}
+            placeholder="mis. Lab 1"
+          />
+          <TextField
+            label="Tanggal"
+            value={form.tanggal}
+            onChangeText={updateForm('tanggal')}
+            placeholder="DD/MM/YYYY"
+            keyboardType="number-pad"
+          />
+          <TextField
+            label="Jam mulai"
+            value={form.jam}
+            onChangeText={updateForm('jam')}
+            placeholder="HH.MM"
+            keyboardType="number-pad"
+          />
+          <Button label="Simpan" onPress={() => setFormNote(`Disimpan: ${form.topik || '(kosong)'}`)} />
+        </Section>
       </View>
+
+      <BottomSheet
+        visible={openScenario === 'standar'}
+        onClose={closeScenario}
+        title="Buka sesi ini?"
+        primaryAction={{ label: 'Buka sesi', onPress: closeScenario }}
+        secondaryAction={cancelAction}
+      >
+        <Text style={styles.body}>Praktikan bisa presensi setelah sesi dibuka.</Text>
+      </BottomSheet>
+
+      <BottomSheet
+        visible={openScenario === 'panjang'}
+        onClose={closeScenario}
+        title="Aturan presensi"
+        primaryAction={{ label: 'Mengerti', onPress: closeScenario }}
+        secondaryAction={cancelAction}
+      >
+        {LONG_PARAGRAPHS.map((paragraph) => (
+          <Text key={paragraph} style={styles.body}>
+            {paragraph}
+          </Text>
+        ))}
+      </BottomSheet>
+
+      {/* Untuk kalibrasi STACK_ACTIONS_BELOW: label sengaja lebih panjang dari label alur SRS. */}
+      <BottomSheet
+        visible={openScenario === 'label'}
+        onClose={closeScenario}
+        title="Konfirmasi presensi"
+        primaryAction={{ label: 'Konfirmasi presensi sekarang', onPress: closeScenario }}
+        secondaryAction={{ label: 'Kembali ke detail sesi', onPress: closeScenario }}
+      >
+        <Text style={styles.body}>Kode 0427 untuk Pemrograman Mobile, kelas B.</Text>
+      </BottomSheet>
+
+      <BottomSheet
+        visible={openScenario === 'satu'}
+        onClose={closeScenario}
+        title="Presensi tercatat"
+        primaryAction={{ label: 'Selesai', onPress: closeScenario }}
+      >
+        <Text style={styles.body}>Waktu hadir 09.12.</Text>
+      </BottomSheet>
+
+      <BottomSheet
+        visible={openScenario === 'hitung'}
+        onClose={closeScenario}
+        title="Tutup sesi ini?"
+        primaryAction={{
+          label: 'Tutup sesi',
+          onPress: () => {
+            setActionCount((n) => n + 1);
+            closeScenario();
+          },
+        }}
+        secondaryAction={cancelAction}
+      >
+        <Text style={styles.body}>
+          Tekan Tutup sesi berkali-kali dengan cepat. Penghitung harus naik tepat 1.
+        </Text>
+      </BottomSheet>
 
       <BottomSheet
         visible={sheetVisible}
