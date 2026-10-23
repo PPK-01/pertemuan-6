@@ -46,14 +46,14 @@ export function Button({
       onPress={onPress}
       disabled={inactive}
       role="button"
+      aria-label={accessibilityLabel}
       aria-disabled={inactive}
       aria-busy={loading}
-      accessibilityLabel={accessibilityLabel}
       style={({ pressed }) => [
         styles.base,
         styles[variant],
         disabled && variant !== 'ghost' && styles.disabled,
-        pressed && styles.pressed,
+        pressed && !inactive && styles.pressed,
         style,
       ]}
     >
@@ -63,9 +63,12 @@ export function Button({
   );
 }
 
+// Semua varian ber-border 1 agar tinggi seragam di skala font berapa pun;
+// warna border = warna latar varian.
 const styles = StyleSheet.create({
   base: {
     minHeight: layout.minTouch,
+    borderWidth: 1,
     borderRadius: radius.md,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
@@ -74,18 +77,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing.sm,
   },
-  primary: { backgroundColor: colors.primary },
-  secondary: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.borderStrong,
+  primary: { backgroundColor: colors.primary, borderColor: colors.primary },
+  // Pengecualian: border = surface membuat batas tombol hilang di atas Card/BottomSheet.
+  secondary: { backgroundColor: colors.surface, borderColor: colors.borderStrong },
+  danger: {
+    backgroundColor: colors.feedback.danger.bg,
+    borderColor: colors.feedback.danger.bg,
   },
-  danger: { backgroundColor: colors.feedback.danger.bg },
-  ghost: {},
+  ghost: { backgroundColor: 'transparent', borderColor: 'transparent' },
   disabled: {
     backgroundColor: colors.disabled.bg,
     borderColor: colors.disabled.bg,
   },
   pressed: { opacity: PRESSED_OPACITY },
-  label: { ...typography.label, textAlign: 'center' },
+  label: { ...typography.label, textAlign: 'center', flexShrink: 1 },
 });
