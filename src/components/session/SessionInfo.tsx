@@ -34,7 +34,7 @@ export function SessionInfo({ session, style }: SessionInfoProps) {
       {rows.map(({ label, value }) => (
         <View key={label} style={styles.row}>
           <Text style={styles.label}>{label}</Text>
-          <View style={styles.value}>{value}</View>
+          {value}
         </View>
       ))}
     </View>
@@ -43,15 +43,11 @@ export function SessionInfo({ session, style }: SessionInfoProps) {
 
 const styles = StyleSheet.create({
   container: { gap: spacing.md },
-  row: { flexDirection: 'row', gap: spacing.sm },
-  // lineHeight disamakan dengan body agar baris pertama label sejajar dengan nilainya.
-  label: {
-    ...typography.label,
-    lineHeight: typography.body.lineHeight,
-    color: colors.textMuted,
-    flex: 1,
-  },
-  value: { flex: 2 },
+  // Label di atas nilai, bukan dua kolom: kolom label selebar sepertiga baris memotong
+  // "Praktikum" di tengah kata saat font sistem maksimum (Yoga tidak melebarkan kolom
+  // mengikuti kata), dan nilai butuh lebar penuh agar tetap terbaca di 360dp.
+  row: { gap: spacing.xs },
+  label: { ...typography.label, color: colors.textMuted },
   valueText: { ...typography.body, color: colors.text },
   timeText: { ...sessionTimeText, color: colors.text },
 });
