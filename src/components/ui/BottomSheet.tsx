@@ -38,7 +38,7 @@ export function BottomSheet({
         <Pressable
           onPress={onClose}
           role="button"
-          accessibilityLabel="Tutup"
+          aria-label="Tutup"
           style={[StyleSheet.absoluteFill, styles.overlay]}
         />
         <View style={[styles.panel, { paddingBottom: spacing.lg + insets.bottom }]}>
