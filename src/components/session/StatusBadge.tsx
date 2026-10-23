@@ -26,6 +26,8 @@ export function StatusBadge({ status, style }: StatusBadgeProps) {
 const styles = StyleSheet.create({
   badge: {
     alignSelf: 'flex-start',
+    // Di samping judul panjang, judul yang membungkus; badge tidak boleh gepeng.
+    flexShrink: 0,
     borderRadius: radius.full,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,

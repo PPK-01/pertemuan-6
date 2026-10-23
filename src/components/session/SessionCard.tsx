@@ -2,7 +2,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import type { StyleProp, ViewStyle } from 'react-native';
 import type { ReactNode } from 'react';
 
-import { formatSessionTime } from '@/components/session/sessionTime';
+import { formatSessionTime, sessionTimeText } from '@/components/session/sessionTime';
 import { StatusBadge } from '@/components/session/StatusBadge';
 import { Card } from '@/components/ui/Card';
 import { colors } from '@/theme/colors';
@@ -23,6 +23,7 @@ export function SessionCard({ session, onPress, footer, style }: SessionCardProp
   const time = formatSessionTime(session);
 
   // Tanpa accessibilityLabel agar screen reader membacakan semua teks anak, termasuk footer.
+  // Urutan mengikuti scan di kelas: praktikum + status, lalu kelas sebagai pembeda utama.
   return (
     <Card onPress={onPress} style={style}>
       <View style={styles.content}>
@@ -30,8 +31,8 @@ export function SessionCard({ session, onPress, footer, style }: SessionCardProp
           <Text style={styles.title}>{session.praktikum}</Text>
           <StatusBadge status={session.status} />
         </View>
-        <Text style={styles.meta}>Kelas {session.kelas}</Text>
-        <Text style={styles.meta}>{time}</Text>
+        <Text style={styles.kelas}>Kelas {session.kelas}</Text>
+        <Text style={styles.time}>{time}</Text>
         <Text style={styles.topik}>{session.topik}</Text>
         {footer ? <View style={styles.footer}>{footer}</View> : null}
       </View>
@@ -49,7 +50,14 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xs,
   },
   title: { ...typography.heading, color: colors.text, flex: 1 },
-  meta: { ...typography.body, color: colors.text },
-  topik: { ...typography.body, color: colors.textMuted },
-  footer: { marginTop: spacing.sm },
+  kelas: { ...typography.label, color: colors.textMuted },
+  time: { ...sessionTimeText, color: colors.text },
+  topik: { ...typography.body, color: colors.text },
+  // Garis memisahkan info dari layar (footer) dari data sesi.
+  footer: {
+    marginTop: spacing.xs,
+    paddingTop: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
 });
