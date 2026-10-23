@@ -28,8 +28,8 @@ export function Banner({ tone, message, title, style }: BannerProps) {
 const styles = StyleSheet.create({
   container: {
     borderRadius: radius.md,
-    padding: spacing.md,
-    gap: spacing.xs,
+    padding: spacing.lg,
+    gap: spacing.sm,
   },
   title: typography.label,
   message: typography.body,
