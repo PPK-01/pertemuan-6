@@ -22,7 +22,7 @@ export function Card({ children, onPress, accessibilityLabel, style }: CardProps
       <Pressable
         onPress={onPress}
         role="button"
-        accessibilityLabel={accessibilityLabel}
+        aria-label={accessibilityLabel}
         style={({ pressed }) => [styles.card, pressed && styles.pressed, style]}
       >
         {children}
@@ -31,9 +31,10 @@ export function Card({ children, onPress, accessibilityLabel, style }: CardProps
   }
 
   return (
+    // Pengecualian aturan ARIA: `accessible` (menggabungkan isi jadi satu elemen) tidak punya padanan ARIA di RN.
     <View
       accessible={accessibilityLabel !== undefined}
-      accessibilityLabel={accessibilityLabel}
+      aria-label={accessibilityLabel}
       style={[styles.card, style]}
     >
       {children}

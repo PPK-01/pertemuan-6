@@ -25,10 +25,10 @@ import type { Session, SessionStatus } from '@/types';
 const fixtureSessions: Session[] = [
   {
     id: 'fx-scheduled',
-    praktikum: PRAKTIKUM_LIST[0],
+    praktikum: PRAKTIKUM_LIST[1],
     kelas: KELAS_LIST[0],
-    topik: 'Pengenalan React Native',
-    ruang: 'Lab 1',
+    topik: 'Normalisasi',
+    ruang: 'Lab 2',
     startAt: '2026-10-23T02:00:00.000Z',
     endAt: '2026-10-23T04:00:00.000Z',
     status: 'scheduled',
@@ -37,10 +37,11 @@ const fixtureSessions: Session[] = [
   },
   {
     id: 'fx-open',
-    praktikum: PRAKTIKUM_LIST[1],
+    // Nama praktikum terpanjang yang valid menurut tipe Praktikum, dipadukan dengan footer.
+    praktikum: PRAKTIKUM_LIST[0],
     kelas: KELAS_LIST[1],
-    topik: 'Normalisasi',
-    ruang: 'Lab 2',
+    topik: 'Pengenalan React Native',
+    ruang: 'Lab 1',
     startAt: '2026-10-22T02:00:00.000Z',
     endAt: '2026-10-22T04:00:00.000Z',
     status: 'open',
@@ -89,13 +90,16 @@ export default function ComponentPlayground() {
           {BUTTON_VARIANTS.map((variant) => (
             <View key={variant} style={styles.row}>
               <Button label={variant} variant={variant} onPress={() => setLastPressed(variant)} />
-              <Button label="Loading" variant={variant} loading onPress={noop} />
-              <Button label="Disabled" variant={variant} disabled onPress={noop} />
+              <Button label="Memuat" variant={variant} loading onPress={noop} />
+              <Button label="Nonaktif" variant={variant} disabled onPress={noop} />
             </View>
           ))}
         </Section>
 
         <Section title="TextField">
+          <Text style={styles.note}>
+            Ketuk field untuk melihat state fokus. Field Topik menunjukkan error saat fokus.
+          </Text>
           <TextField
             label="Nama"
             value={name}
@@ -177,12 +181,14 @@ export default function ComponentPlayground() {
         </Section>
 
         <Section title="SessionCard">
-          {fixtureSessions.map((session, index) => (
+          {fixtureSessions.map((session) => (
             <SessionCard
               key={session.id}
               session={session}
               onPress={() => setLastPressed(`SessionCard ${session.id}`)}
-              footer={index === 1 ? <Text style={styles.note}>3/6 hadir</Text> : undefined}
+              footer={
+                session.status === 'open' ? <Text style={styles.note}>3/6 hadir</Text> : undefined
+              }
             />
           ))}
         </Section>
