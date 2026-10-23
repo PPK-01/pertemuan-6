@@ -64,7 +64,7 @@ export function Button({
 }
 
 // Semua varian ber-border 1 agar tinggi seragam di skala font berapa pun;
-// warna border = warna latar varian.
+// warna border = warna latar varian, kecuali secondary (lihat di bawah).
 const styles = StyleSheet.create({
   base: {
     minHeight: layout.minTouch,
