@@ -1,6 +1,7 @@
 import { Redirect, Stack } from 'expo-router';
 
 import { useAppStore } from '@/store/appStore';
+import { typography } from '@/theme/typography';
 
 export default function AsistenLayout() {
   const role = useAppStore((state) => state.role);
@@ -11,5 +12,15 @@ export default function AsistenLayout() {
     return <Redirect href="/" />;
   }
 
-  return <Stack />;
+  return (
+    <Stack
+      screenOptions={{
+        headerTitleStyle: {
+          fontSize: typography.heading.fontSize,
+          fontWeight: typography.heading.fontWeight,
+        },
+        headerShadowVisible: false,
+      }}
+    />
+  );
 }
