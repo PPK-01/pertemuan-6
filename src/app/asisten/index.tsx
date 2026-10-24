@@ -85,7 +85,8 @@ const SHEET_SCENARIOS: { id: SheetScenario; label: string }[] = [
 // Di Android, Modal menahan sentuhan ke layar di belakangnya, jadi ini tidak bisa dilakukan manual.
 const REOPEN_DELAY_MS = 100;
 
-// Cukup panjang untuk melewati tinggi layar di landscape, supaya isi sheet harus di-scroll.
+// Cukup panjang untuk melewati tinggi layar portrait dengan font normal, supaya isi sheet harus
+// di-scroll sementara judul dan tombol tetap terlihat.
 const LONG_PARAGRAPHS = [
   'Presensi hanya bisa dilakukan selama sesi berstatus Dibuka. Setelah asisten menutup sesi, kode tidak berlaku lagi.',
   'Kode sesi terdiri dari 4 digit dan dibagikan asisten di kelas. Nol di depan tetap dihitung, jadi 0427 berbeda dengan 427.',
@@ -93,6 +94,14 @@ const LONG_PARAGRAPHS = [
   'Waktu hadir dicatat saat konfirmasi ditekan, bukan saat kode diketik. Pastikan kode sudah benar sebelum konfirmasi.',
   'Sesi hanya terlihat oleh praktikan di kelas yang sama. Bila sesi tidak muncul, cek kembali kelas pada identitasmu.',
   'Rekap kehadiran di sisi asisten ter-update otomatis begitu presensi tercatat, tanpa perlu memuat ulang layar.',
+  'Sesi yang masih Dijadwalkan belum menerima presensi. Tunggu sampai asisten membuka sesi di awal praktikum.',
+  'Bila kode ditolak, cek kembali angka yang diketik. Asisten bisa menunjukkan kode lagi selama sesi masih dibuka.',
+  'Ganti peran atau identitas lewat tombol di header. Data presensi yang sudah tercatat tidak ikut terhapus.',
+  'Riwayat kehadiran menampilkan sesi, kelas, dan waktu hadir. Ringkasan di atasnya menghitung jumlah kehadiranmu.',
+  'Asisten melihat daftar yang sudah hadir urut waktu, yang paling awal di atas, dan daftar yang belum hadir urut nama.',
+  'Sesi yang sudah Ditutup tetap terlihat di jadwal, sehingga praktikan tahu presensinya sudah tidak bisa dilakukan.',
+  'Semua data di aplikasi ini adalah data contoh. Data kembali ke kondisi awal setiap kali aplikasi dijalankan ulang.',
+  'Paragraf terakhir. Bila teks ini terbaca setelah scroll, sementara judul dan tombol tetap terlihat, skenario lolos.',
 ];
 
 function noop() {}
