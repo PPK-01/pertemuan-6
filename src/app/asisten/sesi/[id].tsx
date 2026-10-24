@@ -1,6 +1,6 @@
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { SessionInfo } from '@/components/session/SessionInfo';
 import { Banner } from '@/components/ui/Banner';
@@ -11,7 +11,9 @@ import { Screen } from '@/components/ui/Screen';
 import { StatusActionSheet } from '@/features/asisten/StatusActionSheet';
 import type { StatusAction } from '@/features/asisten/StatusActionSheet';
 import { useAppStore, useSessionById } from '@/store/appStore';
+import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
+import { typography } from '@/theme/typography';
 
 type Feedback = { tone: 'success' | 'danger'; message: string };
 
@@ -74,6 +76,24 @@ export default function AsistenDetailSesiScreen() {
           <SessionInfo session={session} />
         </Card>
 
+        {session.status === 'open' ? (
+          <Card>
+            <View style={styles.code}>
+              <Text style={styles.codeLabel}>Kode sesi</Text>
+              {/* Digit dipisah spasi agar TalkBack membacanya per digit, bukan sebagai bilangan. */}
+              <Text
+                aria-label={`Kode sesi ${session.code.split('').join(' ')}`}
+                style={styles.codeValue}
+              >
+                {session.code}
+              </Text>
+              <Text style={styles.codeHint}>
+                {`Bagikan kode ini ke praktikan kelas ${session.kelas}.`}
+              </Text>
+            </View>
+          </Card>
+        ) : null}
+
         {session.status === 'scheduled' ? (
           <Button label="Buka sesi" onPress={() => showSheet('open')} />
         ) : session.status === 'open' ? (
@@ -96,4 +116,13 @@ export default function AsistenDetailSesiScreen() {
 
 const styles = StyleSheet.create({
   page: { gap: spacing.xl },
+  code: { gap: spacing.sm },
+  codeLabel: { ...typography.label, color: colors.textMuted },
+  codeValue: {
+    ...typography.display,
+    color: colors.text,
+    fontVariant: ['tabular-nums'],
+    letterSpacing: 4, // bukan token, jarak antar digit kode
+  },
+  codeHint: { ...typography.body, color: colors.textMuted },
 });
