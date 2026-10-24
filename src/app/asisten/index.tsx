@@ -1,4 +1,4 @@
-import { Stack } from 'expo-router';
+import { router, Stack } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
 
@@ -57,6 +57,8 @@ export default function AsistenSessionListScreen() {
     [sessions, filter],
   );
 
+  const openCreate = () => router.push('/asisten/buat');
+
   return (
     <Screen scroll={false}>
       <Stack.Screen
@@ -78,13 +80,18 @@ export default function AsistenSessionListScreen() {
             {currentUser ? (
               <Text style={styles.identity}>Masuk sebagai {currentUser.name}</Text>
             ) : null}
+            <Button label="Buat sesi" onPress={openCreate} />
             <StatusFilterBar value={filter} onChange={setFilter} />
           </View>
         }
         ListHeaderComponentStyle={styles.header}
         ListEmptyComponent={
           sessions.length === 0 || filter === 'all' ? (
-            <EmptyState title="Belum ada sesi" message="Sesi yang dibuat akan muncul di sini." />
+            <EmptyState
+              title="Belum ada sesi"
+              message="Sesi yang dibuat akan muncul di sini."
+              action={{ label: 'Buat sesi', onPress: openCreate }}
+            />
           ) : (
             <EmptyState
               title={`Tidak ada sesi yang ${STATUS_LABEL[filter].toLowerCase()}`}
