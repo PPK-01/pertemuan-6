@@ -132,7 +132,6 @@ export function SessionForm({ onSubmit, submitting = false }: SessionFormProps) 
           label="Jam mulai"
           value={values.jamMulai}
           onChangeText={(text) => setField('jamMulai', text)}
-          placeholder="09.00"
           hint="Contoh: 09.00"
           error={errors.jamMulai}
           keyboardType="numeric"
@@ -142,8 +141,7 @@ export function SessionForm({ onSubmit, submitting = false }: SessionFormProps) 
           label="Jam selesai"
           value={values.jamSelesai}
           onChangeText={(text) => setField('jamSelesai', text)}
-          placeholder="11.00"
-          hint="Contoh: 09.00"
+          hint="Contoh: 11.00"
           error={errors.jamSelesai}
           keyboardType="numeric"
           maxLength={5}
