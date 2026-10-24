@@ -2,12 +2,12 @@ import { Stack } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
 
-import { SessionCard } from '@/components/session/SessionCard';
 import { STATUS_LABEL } from '@/components/session/statusLabel';
 import { Button } from '@/components/ui/Button';
 import { Chip } from '@/components/ui/Chip';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Screen } from '@/components/ui/Screen';
+import { SessionListItem } from '@/features/asisten/SessionListItem';
 import { useAppStore, useSessionsForUser } from '@/store/appStore';
 import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
@@ -71,7 +71,7 @@ export default function AsistenSessionListScreen() {
       <FlatList
         data={visibleSessions}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <SessionCard session={item} />}
+        renderItem={({ item }) => <SessionListItem session={item} />}
         ItemSeparatorComponent={ListSeparator}
         ListHeaderComponent={
           <View style={styles.headerContent}>
