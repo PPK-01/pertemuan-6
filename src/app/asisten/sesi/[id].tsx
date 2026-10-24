@@ -63,7 +63,7 @@ export default function AsistenDetailSesiScreen() {
         ? { tone: 'success', message: SUCCESS_MESSAGE[sheetAction] }
         : {
             tone: 'danger',
-            message: 'Status sesi sudah berubah. Muat ulang detail sesi dan coba lagi.',
+            message: 'Status sesi sudah berubah. Periksa status terbaru di atas.',
           },
     );
   }
