@@ -18,8 +18,9 @@ export default function AsistenBuatSesiScreen() {
     if (submittingRef.current || !currentUserId) return;
     submittingRef.current = true;
     setSubmitting(true);
-    createSession({ ...input, createdBy: currentUserId });
-    router.back();
+    const created = createSession({ ...input, createdBy: currentUserId });
+    // replace, bukan push: back dari detail kembali ke daftar, bukan ke form.
+    router.replace({ pathname: '/asisten/sesi/[id]', params: { id: created.id } });
   }
 
   return (

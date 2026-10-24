@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import { StyleSheet, Text } from 'react-native';
 
 import { SessionCard } from '@/components/session/SessionCard';
@@ -19,6 +20,7 @@ export function SessionListItem({ session }: SessionListItemProps) {
   return (
     <SessionCard
       session={session}
+      onPress={() => router.push({ pathname: '/asisten/sesi/[id]', params: { id: session.id } })}
       footer={
         showAttendance ? (
           <Text style={styles.attendance}>
