@@ -70,7 +70,7 @@ const BUTTON_VARIANTS: NonNullable<ButtonProps['variant']>[] = ['primary', 'seco
 type StatusFilter = SessionStatus | 'all';
 const FILTERS: StatusFilter[] = ['all', ...SESSION_STATUS_LIST];
 
-type SheetScenario = 'standar' | 'panjang' | 'label' | 'satu' | 'hitung';
+type SheetScenario = 'standar' | 'panjang' | 'label' | 'satu' | 'hitung' | 'ulang';
 
 const SHEET_SCENARIOS: { id: SheetScenario; label: string }[] = [
   { id: 'standar', label: 'Sheet standar' },
@@ -78,7 +78,12 @@ const SHEET_SCENARIOS: { id: SheetScenario; label: string }[] = [
   { id: 'label', label: 'Sheet label panjang' },
   { id: 'satu', label: 'Sheet satu aksi' },
   { id: 'hitung', label: 'Sheet penghitung tekan' },
+  { id: 'ulang', label: 'Sheet buka ulang saat menutup' },
 ];
+
+// Lebih pendek dari durasi tutup BottomSheet, supaya sheet dibuka lagi di tengah animasi tutup.
+// Di Android, Modal menahan sentuhan ke layar di belakangnya, jadi ini tidak bisa dilakukan manual.
+const REOPEN_DELAY_MS = 100;
 
 // Cukup panjang untuk melewati tinggi layar di landscape, supaya isi sheet harus di-scroll.
 const LONG_PARAGRAPHS = [
@@ -325,6 +330,24 @@ export default function ComponentPlayground() {
       >
         <Text style={styles.body}>
           Tekan Tutup sesi berkali-kali dengan cepat. Penghitung harus naik tepat 1.
+        </Text>
+      </BottomSheet>
+
+      <BottomSheet
+        visible={openScenario === 'ulang'}
+        onClose={closeScenario}
+        title="Buka ulang saat menutup"
+        primaryAction={{
+          label: 'Tutup lalu buka lagi',
+          onPress: () => {
+            closeScenario();
+            setTimeout(() => setOpenScenario('ulang'), REOPEN_DELAY_MS);
+          },
+        }}
+        secondaryAction={cancelAction}
+      >
+        <Text style={styles.body}>
+          Sheet mulai turun lalu naik lagi sebelum hilang. Harus tetap terbuka dan bisa ditekan.
         </Text>
       </BottomSheet>
 
