@@ -8,9 +8,10 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Screen } from '@/components/ui/Screen';
+import { RekapList } from '@/features/asisten/RekapList';
 import { StatusActionSheet } from '@/features/asisten/StatusActionSheet';
 import type { StatusAction } from '@/features/asisten/StatusActionSheet';
-import { useAppStore, useSessionById } from '@/store/appStore';
+import { useAppStore, useRekap, useSessionById } from '@/store/appStore';
 import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
 import { typography } from '@/theme/typography';
@@ -27,6 +28,7 @@ export default function AsistenDetailSesiScreen() {
   const sessionId = Array.isArray(params.id) ? (params.id[0] ?? '') : (params.id ?? '');
 
   const session = useSessionById(sessionId);
+  const rekap = useRekap(sessionId);
   const openSession = useAppStore((state) => state.openSession);
   const closeSession = useAppStore((state) => state.closeSession);
 
@@ -101,6 +103,17 @@ export default function AsistenDetailSesiScreen() {
         ) : feedback ? null : (
           <Banner tone="info" message="Sesi sudah ditutup. Praktikan tidak bisa presensi lagi." />
         )}
+
+        <View style={styles.section}>
+          <Text role="heading" style={styles.sectionTitle}>
+            Rekap kehadiran
+          </Text>
+          {session.status === 'scheduled' ? (
+            <Text style={styles.sectionHint}>Rekap muncul setelah sesi dibuka.</Text>
+          ) : rekap ? (
+            <RekapList rekap={rekap} />
+          ) : null}
+        </View>
       </View>
 
       <StatusActionSheet
@@ -125,4 +138,7 @@ const styles = StyleSheet.create({
     letterSpacing: 4, // bukan token, jarak antar digit kode
   },
   codeHint: { ...typography.body, color: colors.textMuted },
+  section: { gap: spacing.md },
+  sectionTitle: { ...typography.heading, color: colors.text },
+  sectionHint: { ...typography.body, color: colors.textMuted },
 });
