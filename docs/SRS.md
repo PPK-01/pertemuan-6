@@ -273,6 +273,8 @@ Langkah 3 dan 4 boleh berjalan bersamaan setelah langkah 2 di-merge. Setelah Fas
 - Commit message berformat **head-body**, tanpa trailer co-author dari AI (`Co-Authored-By`).
 - Rebase dari `main` sebelum membuka PR. Karena folder terpisah, konflik seharusnya nol.
 - Perubahan kontrak store/types/theme wajib diumumkan ke Elang sebelum merge (pemilik: Ibrahim).
+- Commit dan push boleh dijalankan AI agent dengan syarat: atribusi agent dimatikan, identitas git milik developer, dan `git log -i --grep="co-authored-by"` diperiksa kosong sebelum push. Agent tidak boleh push ke `main` maupun merge PR; merge tetap lewat review rekan.
+- Bila PR sebelumnya belum di-merge, PR berikutnya boleh ditumpuk (base = branch sebelumnya, berstatus draft), lalu di-rebase ke `main` setelah PR dasar di-merge.
 
 ## 11. Definition of Done
 
@@ -283,7 +285,7 @@ Langkah 3 dan 4 boleh berjalan bersamaan setelah langkah 2 di-merge. Setelah Fas
 
 ## 12. Prompt untuk AI Agent Harness
 
-Catatan: prompt Ibrahim menginstruksikan agent membaca `SKILL.md` tiap skill terlebih dahulu. Beberapa skill berorientasi web (web-design-guidelines, frontend-design, taste-skill); prompt meminta agent mengadaptasi prinsipnya ke React Native. Prompt Elang memakai 6 skill terpilih yang sudah dipasang global; skill `grilling` di sana dipakai untuk mewawancarai manusia saat ada keputusan desain yang ambigu, dan perintah git dijalankan oleh manusia, bukan agent.
+Catatan: prompt Ibrahim menginstruksikan agent membaca `SKILL.md` tiap skill terlebih dahulu. Beberapa skill berorientasi web (web-design-guidelines, frontend-design, taste-skill); prompt meminta agent mengadaptasi prinsipnya ke React Native. Prompt Elang memakai 6 skill terpilih yang sudah dipasang global; skill `grilling` di sana dipakai untuk mewawancarai manusia saat ada keputusan desain yang ambigu. Sejak Fase 1 (layar asisten), prompt Elang memakai pola sekali jalan: agent menjalankan git sampai PR draft, manusia menjalankan tes HP sekali per PR.
 
 ### 12.1 Prompt: Ibrahim
 
@@ -396,7 +398,7 @@ Fase 2: ikut uji skenario demo SRS bagian 7 dan review PR Ibrahim.
 Ulangi implementasi -> verifikasi -> perbaiki sampai kriteria penerimaan terpenuhi.
 
 == ATURAN GIT ==
-Kamu TIDAK menjalankan perintah git yang mengubah repo (commit, push, merge, rebase, checkout -b, stash, reset, dll.); semuanya aku yang jalankan. Kamu boleh membaca (git status, git diff, git log). Setiap selesai satu unit kerja, sarankan commit message berformat head-body tanpa trailer Co-Authored-By. Branch feat/elang-<topik> (chore/elang-<topik> untuk pembersihan), satu PR = satu fitur/layar. Jangan sentuh file di luar kepemilikanmu.
+Kamu BOLEH menjalankan git fetch, switch/branch baru, add PER FILE (sebut path), commit, push ke branch fiturmu, dan membuka PR draft lewat gh. DILARANG: push ke main, merge PR, `git add .`, reset --hard. Commit message berformat head-body TANPA trailer apa pun (termasuk Co-Authored-By). Sebelum push, cek atribusi: `git log -i --grep="co-authored-by" origin/main..HEAD` harus kosong dan identitas git milikku. Branch feat/elang-<topik> (chore/elang-<topik> untuk pembersihan), satu PR = satu fitur/layar. Jangan sentuh file di luar kepemilikanmu.
 
 == FORMAT LAPORAN ==
 Setiap selesai satu fitur: ringkas apa yang dibuat, file yang diubah (harus dalam kepemilikanmu), hasil verifikasi agent-browser, saran commit message, dan sisa pekerjaan.
@@ -412,7 +414,8 @@ Setiap selesai satu fitur: ringkas apa yang dibuat, file yang diubah (harus dala
 | Perubahan kontrak di tengah jalan | Wajib diumumkan; pemilik tunggal (Ibrahim) setelah Fase 0 |
 | Kepemilikan sementara types/theme membingungkan | Hanya berlaku sampai PR Fase 0 di-merge; setelah itu semua perubahan lewat Ibrahim |
 | Infinite re-render karena selector mengembalikan referensi baru (Zustand v5) | Layar hanya memakai hook baca dari store; rekap lewat `useRekap` (`useMemo` + `computeRekap`) |
-| Trailer co-author AI terbawa ke commit | Atribusi di agent dimatikan; commit dibuat dan diperiksa manusia |
+| Trailer co-author AI terbawa ke commit | Atribusi di agent dimatikan; agent mengecek identitas git dan trailer di setiap commit dan sebelum push; PR tetap di-review rekan |
+| Kode masuk `main` tanpa review | Semua perubahan lewat PR dengan 1 review; disarankan mengaktifkan branch protection pada `main` (wajib PR + 1 approval) |
 | Kode sesi dianggap di luar kebutuhan | Ini keputusan desain agar "form" presensi bermakna; bila tidak diinginkan, ganti dengan form pernyataan hadir tanpa mengubah kontrak lain |
 | Data hilang saat restart | Diterima untuk demo; persistensi (mis. AsyncStorage) bisa jadi backlog |
 
@@ -423,3 +426,4 @@ Setiap selesai satu fitur: ringkas apa yang dibuat, file yang diubah (harus dala
 | 1.0 | Versi awal dari PM |
 | 1.1 | Routing di `src/app/` (template SDK 57); development build menggantikan Expo Go; pembersihan template oleh Elang; versi awal `types` & `theme` ditulis Elang lalu dikembalikan ke Ibrahim; kontrak theme (light mode); tipe `Rekap`, hook baca store, `computeRekap`/`useRekap`; urutan sesi dan rekap; aturan commit tanpa co-author; prompt Elang memakai 6 skill dan git dijalankan manusia |
 | 1.2 | Mencatat keputusan Fase 0 yang sudah diterapkan di kode: `KELAS_LIST`/`PRAKTIKUM_LIST`/`SESSION_STATUS_LIST` beserta tipe turunannya; `Session.code` 4 digit; `CreateSessionInput` dan `AttendFailReason`; waktu ISO (UTC) + formatter lokal di `utils/time.ts`; tanda tangan store sesuai kode; theme: `borderStrong`, `ColorPair`, ekspor `spacing.ts`, tanpa barrel; helper komponen (`pressable.ts`, `statusLabel.ts`, `sessionTime.ts`); daftar impor yang diizinkan untuk `components/` |
+| 1.3 | Mencatat hasil Fase 1 layar asisten: file baru `SessionListItem` dan `sessionFormValidation.ts`, `sessionTimeText`, format ketik tanggal/jam, navigasi setelah membuat sesi; AI agent boleh menjalankan git sampai PR draft dengan pengaman atribusi; PR bertumpuk; risiko kode masuk `main` tanpa review |
