@@ -13,7 +13,7 @@ import type { Session } from '@/types';
 export type SessionCardProps = {
   session: Session;
   onPress?: () => void;
-  /** KHUSUS konten informatif (mis. "Sudah presensi", "3/6 hadir"). JANGAN berisi tombol/elemen yang bisa ditekan. */
+  /** KHUSUS konten informatif (mis. "Sudah presensi", "3 dari 6 hadir"). JANGAN berisi tombol/elemen yang bisa ditekan. */
   footer?: ReactNode;
   /** Khusus layout (margin, flex, alignSelf), bukan warna/ukuran. */
   style?: StyleProp<ViewStyle>;
