@@ -57,6 +57,9 @@ function InfoRow({
   );
 }
 
+/** Spasi antar angka pada tampilan kode sesi agar mudah dibaca. */
+const CODE_LETTER_SPACING = 4;
+
 const styles = StyleSheet.create({
   rows: { gap: spacing.md },
   row: { gap: spacing.xs },
@@ -65,7 +68,7 @@ const styles = StyleSheet.create({
   code: {
     ...typography.heading,
     color: colors.text,
-    letterSpacing: 4,
+    letterSpacing: CODE_LETTER_SPACING,
     fontVariant: ['tabular-nums'],
   },
   note: { ...typography.caption, color: colors.textMuted },

@@ -56,7 +56,12 @@ export const useAppStore = create<AppStoreState>()((set, get) => ({
       status: 'scheduled',
       code: createSessionCode(),
     };
-    set((state) => ({ sessions: [...state.sessions, session] }));
+    const startAt = new Date(session.startAt).getTime();
+    const endAt = new Date(session.endAt).getTime();
+    const isValid = !Number.isNaN(startAt) && !Number.isNaN(endAt) && startAt < endAt;
+    if (isValid) {
+      set((state) => ({ sessions: [...state.sessions, session] }));
+    }
     return session;
   },
 
@@ -210,6 +215,14 @@ export function useAttendanceByUser(userId: string): Attendance[] {
 
 export function useHasAttended(sessionId: string, userId: string): boolean {
   return useAppStore(hasAttended(sessionId, userId));
+}
+
+export function useCurrentUser(): User | null {
+  const currentUserId = useAppStore((state) => state.currentUserId);
+  const user = useAppStore(
+    (state) => state.users.find((item) => item.id === currentUserId) ?? null,
+  );
+  return user;
 }
 
 export function useRekap(sessionId: string): Rekap | null {

@@ -1,6 +1,6 @@
 # Presensi Praktikum - Fase 1 Ibrahim
 
-Dokumen ini merangkup cara menjalankan dan menguji bagian **Ibrahim Fase 1** pada aplikasi Presensi Praktikum. Sumber kebutuhan tetap `docs/SRS.md`.
+Dokumen ini merangkum cara menjalankan dan menguji bagian **Ibrahim Fase 1** pada aplikasi Presensi Praktikum. Sumber kebutuhan tetap `docs/SRS.md`.
 
 ## Cakupan
 
@@ -72,8 +72,8 @@ Untuk menguji penolakan kode salah, ulangi langkah 1 sampai 5 dengan kode yang s
 Praktikan Kelas A dapat dipakai untuk melihat variasi:
 
 - **Bagas Pratama** sudah memiliki riwayat pada sesi **Basis Data, SQL Dasar** yang ditutup.
-- Sesi **Pemrograman Mobile, Pengenalan React Native** masih **Dijadwalkan**, jadi belum bisa dipresensi.
-- Untuk mencoba presensi Kelas A, buat dan buka sesi Kelas A lebih dulu dari sisi asisten (alur Elang), lalu masuk kembali sebagai Bagas atau Citra.
+- Sesi **Basis Data, Desain Schema** berstatus **Dibuka** dengan kode **2468**, jadi Bagas atau Citra bisa langsung mencoba presensi tanpa membuat sesi baru.
+- Sesi **Pemrograman Mobile, Pengenalan React Native** masih **Dijadwalkan** (6 Nov 2026), jadi belum bisa dipresensi dan tidak ikut dihitung pada ringkasan riwayat.
 
 ## Data dummy
 
@@ -94,6 +94,7 @@ Sesi awal:
 | --- | --- | --- | --- |
 | Pemrograman Mobile, Pengenalan React Native | A | Dijadwalkan | 0427 |
 | Basis Data, Normalisasi | B | Dibuka | 1358 |
+| Basis Data, Desain Schema | A | Dibuka | 2468 |
 | Pemrograman Mobile, State Management | B | Ditutup | 2469 |
 | Basis Data, SQL Dasar | A | Ditutup | 9876 |
 
@@ -102,6 +103,7 @@ Aturan konsistensi yang dijaga:
 - Setiap praktikan hanya melihat sesi kelasnya.
 - Kode sesi hanya dipakai oleh alur presensi. Layar praktikan tidak menampilkan kode sebelum pengguna memasukkannya.
 - Kehadiran awal hanya mengacu pada sesi yang sudah ditutup, sehingga tidak ada praktikan yang tercatat hadir pada sesi yang masih dibuka.
+- Sesi berstatus **Dijadwalkan** tidak ikut dihitung pada ringkasan riwayat (jumlah, persentase, dan `aria-valuemax`), tetapi tetap tampil di jadwal.
 - Waktu disimpan sebagai ISO 8601 dan ditampilkan lewat formatter lokal `id-ID`.
 
 Data hanya berada di memori Zustand. Menutup atau me-restart aplikasi mengembalikan semua data ke kondisi dummy awal.
@@ -128,6 +130,6 @@ Layar hanya memakai aksi dan hook baca dari `src/store/appStore.ts`. Aturan bisn
 
 ## Verifikasi
 
-- `npx tsc --noEmit` lolos tanpa error.
+- `npx tsc --noEmit` tidak menambah error baru; masih ada tiga error lama pada file asisten milik Elang (`src/app/asisten/**` dan `src/features/asisten/**`) yang berada di luar cakupan Fase 1 Ibrahim.
 - `npx expo export --platform web` berhasil menghasilkan bundle dan route layar praktikan, termasuk route dinamis detail sesi.
 - Pengecekan browser tidak dijalankan pada sesi ini sesuai instruksi.

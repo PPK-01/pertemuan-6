@@ -32,7 +32,7 @@ export default function PraktikanLayout() {
         contentStyle: { backgroundColor: colors.background },
       }}
     >
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen name="(tabs)" options={{ headerShown: false, title: 'Jadwal' }} />
       <Stack.Screen name="sesi/[id]" options={{ title: 'Detail sesi' }} />
     </Stack>
   );

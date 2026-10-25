@@ -1,5 +1,4 @@
 import { StyleSheet, Text, View } from 'react-native';
-import type { ReactNode } from 'react';
 
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -8,25 +7,21 @@ import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
 import { typography } from '@/theme/typography';
 
+/** Panjang digit kode sesi presensi praktikum. */
+const SESSION_CODE_LENGTH = 4;
+
 export type PresensiFormProps = {
   code: string;
   onChangeCode: (code: string) => void;
   onSubmit: () => void;
   error?: string;
-  banner?: ReactNode;
 };
 
-export function PresensiForm({
-  code,
-  onChangeCode,
-  onSubmit,
-  error,
-  banner,
-}: PresensiFormProps) {
-  const canSubmit = code.length === 4;
+export function PresensiForm({ code, onChangeCode, onSubmit, error }: PresensiFormProps) {
+  const canSubmit = code.length === SESSION_CODE_LENGTH;
 
   function handleChange(text: string) {
-    onChangeCode(text.replace(/\D/g, '').slice(0, 4));
+    onChangeCode(text.replace(/\D/g, '').slice(0, SESSION_CODE_LENGTH));
   }
 
   return (
@@ -35,18 +30,17 @@ export function PresensiForm({
         <View style={styles.copy}>
           <Text style={styles.title}>Presensi</Text>
           <Text style={styles.description}>
-            Masukkan 4 digit kode sesi yang dibagikan asisten.
+            Masukkan {SESSION_CODE_LENGTH} digit kode sesi yang dibagikan asisten.
           </Text>
         </View>
-        {banner}
         <TextField
           label="Kode sesi"
           value={code}
           onChangeText={handleChange}
           placeholder="0000"
-          hint="4 digit angka"
+          hint={`${SESSION_CODE_LENGTH} digit angka`}
           keyboardType="number-pad"
-          maxLength={4}
+          maxLength={SESSION_CODE_LENGTH}
           error={error}
         />
         <Button label="Presensi" onPress={onSubmit} disabled={!canSubmit} />

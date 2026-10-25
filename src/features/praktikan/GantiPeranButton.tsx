@@ -17,7 +17,7 @@ export function GantiPeranButton() {
     <Pressable
       onPress={handlePress}
       role="button"
-      accessibilityLabel="Ganti peran"
+      aria-label="Ganti peran"
       hitSlop={spacing.sm}
       style={({ pressed }) => [styles.button, pressed && styles.pressed]}
     >

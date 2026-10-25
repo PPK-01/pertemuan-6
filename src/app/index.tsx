@@ -184,6 +184,14 @@ function getContinueLabel(role: Role | null): string {
   return 'Lanjutkan';
 }
 
+/** Ukuran badge inisial nama (diameter lingkaran). */
+const INITIALS_BADGE_SIZE = 36;
+
+/** Ukuran dan ketebalan tombol radio pilihan. */
+const RADIO_SIZE = 20;
+const RADIO_BORDER_WIDTH = 2;
+const RADIO_CORE_SIZE = 10;
+
 function identityDetail(user: User): string {
   return user.kelas ? `Kelas ${user.kelas}` : 'Asisten';
 }
@@ -237,8 +245,8 @@ const styles = StyleSheet.create({
   identityRowWide: { flexBasis: '48%', flexGrow: 1 },
   identityName: { ...typography.body, fontWeight: typography.label.fontWeight, color: colors.text },
   initialsBadge: {
-    width: 36,
-    height: 36,
+    width: INITIALS_BADGE_SIZE,
+    height: INITIALS_BADGE_SIZE,
     borderRadius: radius.full,
     alignItems: 'center',
     justifyContent: 'center',
@@ -248,18 +256,18 @@ const styles = StyleSheet.create({
   },
   initialsText: { ...typography.label, color: colors.textMuted },
   radio: {
-    width: 20,
-    height: 20,
+    width: RADIO_SIZE,
+    height: RADIO_SIZE,
     borderRadius: radius.full,
-    borderWidth: 2,
+    borderWidth: RADIO_BORDER_WIDTH,
     borderColor: colors.borderStrong,
     alignItems: 'center',
     justifyContent: 'center',
   },
   radioSelected: { borderColor: colors.primary },
   radioCore: {
-    width: 10,
-    height: 10,
+    width: RADIO_CORE_SIZE,
+    height: RADIO_CORE_SIZE,
     borderRadius: radius.full,
     backgroundColor: colors.primary,
   },

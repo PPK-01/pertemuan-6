@@ -1,7 +1,7 @@
 const timeFormatter = new Intl.DateTimeFormat('id-ID', {
   hour: '2-digit',
   minute: '2-digit',
-  hour12: false,
+  hourCycle: 'h23',
 });
 
 const dateFormatter = new Intl.DateTimeFormat('id-ID', {

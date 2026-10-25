@@ -12,7 +12,7 @@ import { Screen } from '@/components/ui/Screen';
 import { ATTEND_FAIL_MESSAGE } from '@/features/praktikan/attendMessages';
 import { PresensiForm } from '@/features/praktikan/PresensiForm';
 import { PresensiSheet } from '@/features/praktikan/PresensiSheet';
-import { useAppStore, useAttendanceByUser, useSessionById } from '@/store/appStore';
+import { useAppStore, useAttendanceByUser, useCurrentUser, useSessionById } from '@/store/appStore';
 import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
 import { typography } from '@/theme/typography';
@@ -24,10 +24,7 @@ export default function DetailSesiScreen() {
   const params = useLocalSearchParams<{ id?: string | string[] }>();
   const sessionId = Array.isArray(params.id) ? (params.id[0] ?? '') : (params.id ?? '');
 
-  const currentUserId = useAppStore((state) => state.currentUserId);
-  const currentUser = useAppStore(
-    (state) => state.users.find((user) => user.id === currentUserId) ?? null,
-  );
+  const currentUser = useCurrentUser();
   const submitAttendance = useAppStore((state) => state.submitAttendance);
 
   const session = useSessionById(sessionId);
@@ -72,7 +69,7 @@ export default function DetailSesiScreen() {
       <Screen>
         <EmptyState
           title="Sesi tidak tersedia"
-          message="Sesi ini bukan untuk kelasmu."
+          message={ATTEND_FAIL_MESSAGE.NOT_IN_CLASS}
           action={{
             label: 'Kembali ke jadwal',
             onPress: () => router.replace('/praktikan/jadwal'),
@@ -129,6 +126,10 @@ export default function DetailSesiScreen() {
           <SessionInfo session={session} />
         </Card>
 
+        {!attendance && bannerMessage ? (
+          <Banner tone="danger" message={bannerMessage} />
+        ) : null}
+
         {attendance ? (
           <View style={styles.attendanceBlock}>
             <Banner
@@ -146,21 +147,18 @@ export default function DetailSesiScreen() {
             onChangeCode={handleChangeCode}
             onSubmit={handleOpenConfirm}
             error={codeError}
-            banner={
-              bannerMessage ? <Banner tone="danger" message={bannerMessage} /> : undefined
-            }
           />
         ) : session.status === 'closed' ? (
           <Banner
             tone="info"
             title="Sesi sudah ditutup"
-            message="Kamu tidak tercatat hadir pada sesi ini."
+            message={ATTEND_FAIL_MESSAGE.SESSION_NOT_OPEN}
           />
         ) : (
           <Banner
             tone="info"
             title="Sesi belum dibuka"
-            message="Presensi bisa dilakukan setelah asisten membuka sesi."
+            message={ATTEND_FAIL_MESSAGE.SESSION_NOT_OPEN}
           />
         )}
       </View>

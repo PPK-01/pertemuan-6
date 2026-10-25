@@ -5,17 +5,14 @@ import { StyleSheet, Text, View } from 'react-native';
 import { Screen } from '@/components/ui/Screen';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { SessionCard } from '@/components/session/SessionCard';
-import { useAppStore, useAttendanceByUser, useSessionsForUser } from '@/store/appStore';
+import { useAttendanceByUser, useCurrentUser, useSessionsForUser } from '@/store/appStore';
 import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
 import { typography } from '@/theme/typography';
 import type { Session } from '@/types';
 
 export default function JadwalScreen() {
-  const currentUserId = useAppStore((state) => state.currentUserId);
-  const currentUser = useAppStore(
-    (state) => state.users.find((user) => user.id === currentUserId) ?? null,
-  );
+  const currentUser = useCurrentUser();
   const userId = currentUser?.id ?? '';
   const sessions = useSessionsForUser(userId);
   const attendances = useAttendanceByUser(userId);

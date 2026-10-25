@@ -1,25 +1,24 @@
 import { router } from 'expo-router';
 import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import type { DimensionValue } from 'react-native';
 
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Card } from '@/components/ui/Card';
 import { Screen } from '@/components/ui/Screen';
 import { RiwayatItem } from '@/features/praktikan/RiwayatItem';
-import { useAppStore, useAttendanceByUser, useSessionsForUser } from '@/store/appStore';
+import { useAttendanceByUser, useCurrentUser, useSessionsForUser } from '@/store/appStore';
 import { colors } from '@/theme/colors';
 import { radius, spacing } from '@/theme/spacing';
 import { typography } from '@/theme/typography';
 import type { Attendance, Session } from '@/types';
 
+/** Tinggi bar progress ringkasan kehadiran. */
+const SUMMARY_TRACK_HEIGHT = 8;
+
 type RiwayatEntry = { session: Session; attendance: Attendance };
 
 export default function RiwayatScreen() {
-  const currentUserId = useAppStore((state) => state.currentUserId);
-  const currentUser = useAppStore(
-    (state) => state.users.find((user) => user.id === currentUserId) ?? null,
-  );
+  const currentUser = useCurrentUser();
   const userId = currentUser?.id ?? '';
   const sessions = useSessionsForUser(userId);
   const attendances = useAttendanceByUser(userId);
@@ -41,8 +40,13 @@ export default function RiwayatScreen() {
       );
   }, [sessions, attendances]);
 
+  const countedSessions = useMemo(
+    () => sessions.filter((session) => session.status !== 'scheduled'),
+    [sessions],
+  );
+
   const percent =
-    sessions.length > 0 ? Math.round((entries.length / sessions.length) * 100) : 0;
+    countedSessions.length > 0 ? Math.round((entries.length / countedSessions.length) * 100) : 0;
 
   if (!currentUser) {
     return (
@@ -61,12 +65,12 @@ export default function RiwayatScreen() {
         <View style={styles.intro}>
           <Text style={styles.title}>Riwayat kehadiran</Text>
           <Text style={styles.meta}>
-            {entries.length} dari {sessions.length} sesi
+            {entries.length} dari {countedSessions.length} sesi
             {currentUser.kelas ? ` untuk Kelas ${currentUser.kelas}` : ''}
           </Text>
         </View>
 
-        {sessions.length > 0 ? (
+        {countedSessions.length > 0 ? (
           <Card>
             <View style={styles.summary}>
               <View style={styles.summaryHeader}>
@@ -76,14 +80,14 @@ export default function RiwayatScreen() {
               <View
                 role="progressbar"
                 aria-valuemin={0}
-                aria-valuemax={sessions.length}
+                aria-valuemax={countedSessions.length}
                 aria-valuenow={entries.length}
                 style={styles.track}
               >
-                <View style={[styles.trackFill, { width: `${percent}%` as DimensionValue }]} />
+                <View style={[styles.trackFill, { width: `${percent}%` }]} />
               </View>
               <Text style={styles.summaryMeta}>
-                {entries.length} sesi dihadiri, {sessions.length - entries.length} sesi belum
+                {entries.length} sesi dihadiri, {countedSessions.length - entries.length} sesi belum
                 dihadiri
               </Text>
             </View>
@@ -95,7 +99,7 @@ export default function RiwayatScreen() {
             title="Belum ada riwayat"
             message="Kehadiran yang sudah dicatat akan muncul di sini."
             action={
-              sessions.length > 0
+              countedSessions.length > 0
                 ? { label: 'Lihat jadwal', onPress: () => router.navigate('/praktikan/jadwal') }
                 : undefined
             }
@@ -126,7 +130,7 @@ const styles = StyleSheet.create({
   summaryTitle: { ...typography.heading, color: colors.text },
   summaryValue: { ...typography.title, color: colors.text, fontVariant: ['tabular-nums'] },
   track: {
-    height: 8,
+    height: SUMMARY_TRACK_HEIGHT,
     borderRadius: radius.full,
     backgroundColor: colors.background,
     borderWidth: 1,
