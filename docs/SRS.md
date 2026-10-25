@@ -401,7 +401,7 @@ Ulangi implementasi -> verifikasi -> perbaiki sampai kriteria penerimaan terpenu
 Kamu BOLEH menjalankan git fetch, switch/branch baru, add PER FILE (sebut path), commit, push ke branch fiturmu, dan membuka PR draft lewat gh. DILARANG: push ke main, merge PR, `git add .`, reset --hard. Commit message berformat head-body TANPA trailer apa pun (termasuk Co-Authored-By). Sebelum push, cek atribusi: `git log -i --grep="co-authored-by" origin/main..HEAD` harus kosong dan identitas git milikku. Branch feat/elang-<topik> (chore/elang-<topik> untuk pembersihan), satu PR = satu fitur/layar. Jangan sentuh file di luar kepemilikanmu.
 
 == FORMAT LAPORAN ==
-Setiap selesai satu fitur: ringkas apa yang dibuat, file yang diubah (harus dalam kepemilikanmu), hasil verifikasi agent-browser, saran commit message, dan sisa pekerjaan.
+Setiap selesai satu fitur: ringkas apa yang dibuat, file yang diubah (harus dalam kepemilikanmu), hasil verifikasi agent-browser, commit yang dibuat, URL PR, dan sisa pekerjaan.
 ```
 
 ## 13. Risiko dan Catatan
@@ -415,7 +415,7 @@ Setiap selesai satu fitur: ringkas apa yang dibuat, file yang diubah (harus dala
 | Kepemilikan sementara types/theme membingungkan | Hanya berlaku sampai PR Fase 0 di-merge; setelah itu semua perubahan lewat Ibrahim |
 | Infinite re-render karena selector mengembalikan referensi baru (Zustand v5) | Layar hanya memakai hook baca dari store; rekap lewat `useRekap` (`useMemo` + `computeRekap`) |
 | Trailer co-author AI terbawa ke commit | Atribusi di agent dimatikan; agent mengecek identitas git dan trailer di setiap commit dan sebelum push; PR tetap di-review rekan |
-| Kode masuk `main` tanpa review | Semua perubahan lewat PR dengan 1 review; disarankan mengaktifkan branch protection pada `main` (wajib PR + 1 approval) |
+| Kode masuk `main` tanpa review | Semua perubahan lewat PR dengan 1 review; branch protection pada `main` diaktifkan sesuai §10 (wajib PR + 1 approval) |
 | Kode sesi dianggap di luar kebutuhan | Ini keputusan desain agar "form" presensi bermakna; bila tidak diinginkan, ganti dengan form pernyataan hadir tanpa mengubah kontrak lain |
 | Data hilang saat restart | Diterima untuk demo; persistensi (mis. AsyncStorage) bisa jadi backlog |
 
