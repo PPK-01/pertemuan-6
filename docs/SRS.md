@@ -1,6 +1,6 @@
 # SRS & Rencana Kerja: Aplikasi Presensi Praktikum (React Native)
 
-PM: Dhimas · Tim: Ibrahim, Elang · Sprint: 1 · Versi 1.2
+PM: Dhimas · Tim: Ibrahim, Elang · Sprint: 1 · Versi 1.3
 
 ## 1. Pendahuluan
 
@@ -61,7 +61,7 @@ Rekap {
 }
 ```
 
-Semua waktu disimpan sebagai ISO 8601 hasil `toISOString()` (UTC) dan ditampilkan dalam waktu lokal lewat `src/utils/time.ts` (`formatDate`, `formatTime`, `formatDateTime`; locale `id-ID`, 24 jam). Parsing dan validasi teks tanggal/jam dilakukan form asisten (`SessionForm` di `src/features/asisten/`). `code` dibuat store saat `createSession` lewat `createSessionCode()` di `src/utils/id.ts`; UI asisten hanya menampilkannya saat status `'open'`.
+Semua waktu disimpan sebagai ISO 8601 hasil `toISOString()` (UTC) dan ditampilkan dalam waktu lokal lewat `src/utils/time.ts` (`formatDate`, `formatTime`, `formatDateTime`; locale `id-ID`, 24 jam). Parsing dan validasi teks tanggal/jam dilakukan fungsi murni di `sessionFormValidation.ts` yang dipakai `SessionForm` (keduanya di `src/features/asisten/`). Format ketik tanggal `DD/MM/YYYY` (pemisah `/`, `-`, atau `.`) dan jam `HH.MM` 24 jam (pemisah `.` atau `:`). `code` dibuat store saat `createSession` lewat `createSessionCode()` di `src/utils/id.ts`; UI asisten hanya menampilkannya saat status `'open'`.
 
 ### Kontrak store (`src/store/appStore.ts`)
 
@@ -157,12 +157,13 @@ Kode salah → "Kode sesi tidak sesuai". Sesi belum dibuka/sudah ditutup → "Se
 /asisten    (Stack)
   index                 Daftar semua sesi + filter status           [Elang]
   buat                  Form buat sesi                              [Elang]
+                        -> setelah dibuat, langsung ke sesi/[id] sesi baru
   sesi/[id]             Detail + Buka/Tutup (bottom sheet) + Rekap  [Elang]
 ```
 
 Path di atas adalah route; file-nya berada di `src/app/` (mis. `/asisten/buat` → `src/app/asisten/buat.tsx`).
 
-Header di kedua peran memiliki tombol "Ganti peran" untuk kembali ke `/`.
+Header di kedua peran memiliki tombol "Ganti peran" untuk kembali ke `/`. Di sisi asisten tombol ini hanya ada di layar daftar (`index`); layar `buat` dan `sesi/[id]` memakai tombol back.
 
 ## 7. Skenario Demo (kriteria penerimaan utama)
 
@@ -204,9 +205,10 @@ src/
                                              pressable.ts (PRESSED_OPACITY)
   components/session/              ELANG     SessionCard, StatusBadge, SessionInfo,
                                              statusLabel.ts (STATUS_LABEL),
-                                             sessionTime.ts (formatSessionTime)
+                                             sessionTime.ts (formatSessionTime, sessionTimeText)
   features/praktikan/              IBRAHIM   PresensiForm, PresensiSheet, RiwayatItem
-  features/asisten/                ELANG     SessionForm, StatusActionSheet, RekapList
+  features/asisten/                ELANG     SessionForm, StatusActionSheet, RekapList,
+                                             SessionListItem, sessionFormValidation.ts
   global.css                       -         bawaan template, dibiarkan
 docs/                              IBRAHIM   SRS.md, README.md
 AGENTS.md                          -         bawaan template, dibiarkan
