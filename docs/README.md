@@ -1,6 +1,6 @@
-# Presensi Praktikum - Fase 1 Ibrahim
+# Presensi Praktikum - Ibrahim (Fase 1 & Fase 2)
 
-Dokumen ini merangkum cara menjalankan dan menguji bagian **Ibrahim Fase 1** pada aplikasi Presensi Praktikum. Sumber kebutuhan tetap `docs/SRS.md`.
+Dokumen ini merangkum cara menjalankan dan menguji bagian **Ibrahim Fase 1 dan Fase 2** pada aplikasi Presensi Praktikum. Sumber kebutuhan tetap `docs/SRS.md`.
 
 ## Cakupan
 
@@ -13,7 +13,14 @@ Fase 1 Ibrahim mencakup:
 - FR-11: riwayat kehadiran beserta ringkasan jumlah.
 - README dan penjagaan konsistensi data dummy.
 
-Di luar cakupan: seluruh layar asisten dan Fase 2. File milik Elang di `src/app/asisten/**`, `src/components/**`, dan `src/features/asisten/**` tidak diubah.
+Fase 2 Ibrahim mencakup:
+
+- Uji Skenario Demo SRS bagian 7 pada alur asisten → praktikan → rekap → tutup sesi.
+- Pemeriksaan responsif secara statis dan build web.
+- Cross review PR Elang (#14) tanpa mengubah file miliknya.
+- Perbaikan bug hanya pada file milik Ibrahim.
+
+Di luar cakupan: layar dan komponen asisten (`src/app/asisten/**`, `src/components/**`, `src/features/asisten/**`). Temuan di file Elang diteruskan lewat review, bukan diubah di sini.
 
 ## Prasyarat
 
@@ -128,8 +135,26 @@ docs/README.md
 
 Layar hanya memakai aksi dan hook baca dari `src/store/appStore.ts`. Aturan bisnis presensi tetap berada di store. Komponen bersama dari Elang dipakai lewat props tanpa diubah.
 
+## Hasil Fase 2
+
+Skenario Demo SRS bagian 7 diperiksa pada logika store memakai skrip sementara (dihapus setelah uji). Seluruh 27 pemeriksaan lolos:
+
+- Sesi baru berstatus `scheduled`, kode sesi 4 digit, dan langsung terlihat oleh asisten.
+- `openSession` mengisi `openedAt`; transisi ganda ditolak; praktikan kelas lain tidak melihat sesi.
+- Presensi menerima kode benar dan mencatat timestamp ISO; kode salah, kelas salah, duplikat, dan sesi tertutup ditolak dengan alasan kontrak.
+- Rekap menghitung total kelas, hadir, dan belum hadir (urut nama).
+- `closeSession` mengisi `closedAt`; praktikan lain melihat status Ditutup dan tidak bisa presensi.
+- Daftar sesi praktikan urut `startAt`.
+
+## Hasil review PR Elang (#14)
+
+- Diff hanya mengubah komentar contoh footer `SessionCard` menjadi "3 dari 6 hadir"; sudah konsisten dengan teks nyata di `SessionListItem` dan `RekapList`.
+- Tidak ada temuan blocking dan tidak ada file Elang yang diubah.
+- Catatan yang diteruskan ke Elang/PM: klaim `tsc` perlu dijalankan setelah tipe route Expo di-generate. `app.json` sudah diubah ke `"orientation": "default"` agar landscape native bisa diuji ulang.
+
 ## Verifikasi
 
-- `npx tsc --noEmit` tidak menambah error baru; masih ada tiga error lama pada file asisten milik Elang (`src/app/asisten/**` dan `src/features/asisten/**`) yang berada di luar cakupan Fase 1 Ibrahim.
-- `npx expo export --platform web` berhasil menghasilkan bundle dan route layar praktikan, termasuk route dinamis detail sesi.
-- Pengecekan browser tidak dijalankan pada sesi ini sesuai instruksi.
+- `npx tsc --noEmit` lolos. `expo-env.d.ts` dan `.expo/types` bersifat generated dan gitignored; jalankan `npx expo start` sekali di clone baru agar tipe route tersedia sebelum typecheck.
+- `npx expo export --platform web` berhasil: 11 static route dan bundle web 1.2MB.
+- Pemeriksaan responsif statis: `Screen` membatasi konten ke 600 dan memusatkannya, layar pilih identitas memakai `useWindowDimensions` (dua kolom mulai 640), aksi `BottomSheet` bertumpuk di bawah 360, dan tidak ada lebar/tinggi tetap pada container utama.
+- Pengecekan UI interaktif di browser dan perangkat Android tidak dijalankan pada sesi ini sesuai instruksi. Langkah uji manualnya tetap ada di bagian Alur demo di atas. Landscape native juga belum diuji ulang setelah `app.json` diubah ke `"orientation": "default"`.
