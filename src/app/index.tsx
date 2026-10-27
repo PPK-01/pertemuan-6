@@ -1,17 +1,18 @@
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/ui/Button';
+import { CodeCells } from '@/components/ui/CodeCells';
 import { PRESSED_OPACITY } from '@/components/ui/pressable';
-import { Screen } from '@/components/ui/Screen';
 import { useAppStore } from '@/store/appStore';
 import { colors } from '@/theme/colors';
 import { layout, radius, spacing } from '@/theme/spacing';
 import { typography } from '@/theme/typography';
 import type { Role, User } from '@/types';
 
-const ROLE_OPTIONS: { role: Role; label: string; description: string }[] = [
+const ROLES: { role: Role; label: string; description: string }[] = [
   {
     role: 'praktikan',
     label: 'Praktikan',
@@ -19,18 +20,18 @@ const ROLE_OPTIONS: { role: Role; label: string; description: string }[] = [
   },
   {
     role: 'asisten',
-    label: 'Asisten',
-    description: 'Kelola sesi dan pantau rekap kehadiran.',
+    label: 'Asisten Lab',
+    description: 'Buka sesi, tunjukkan kode, dan pantau rekap.',
   },
 ];
 
-function getInitials(name: string): string {
-  return name
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() ?? '')
-    .join('');
+function CheckmarkIcon() {
+  return (
+    <View style={styles.checkFrame}>
+      <View style={styles.checkStemShort} />
+      <View style={styles.checkStemLong} />
+    </View>
+  );
 }
 
 function RadioDot({ selected }: { selected: boolean }) {
@@ -41,16 +42,8 @@ function RadioDot({ selected }: { selected: boolean }) {
   );
 }
 
-function InitialsBadge({ name }: { name: string }) {
-  return (
-    <View aria-hidden style={styles.initialsBadge}>
-      <Text style={styles.initialsText}>{getInitials(name)}</Text>
-    </View>
-  );
-}
-
 export default function PilihPeranScreen() {
-  const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const users = useAppStore((state) => state.users);
   const storeRole = useAppStore((state) => state.role);
   const storeUserId = useAppStore((state) => state.currentUserId);
@@ -65,213 +58,309 @@ export default function PilihPeranScreen() {
     [users, selectedRole],
   );
 
-  const twoColumns = width >= 640;
   const canContinue = selectedRole !== null && selectedUserId !== null;
-  const buttonLabel = getContinueLabel(selectedRole);
 
   function handleRoleChange(role: Role) {
-    if (role === selectedRole) {
-      return;
-    }
+    if (role === selectedRole) return;
     setSelectedRole(role);
     setSelectedUserId(null);
   }
 
   function handleContinue() {
-    if (!selectedRole || !selectedUserId) {
-      return;
-    }
+    if (!selectedRole || !selectedUserId) return;
     setRole(selectedRole);
     setCurrentUser(selectedUserId);
-    router.replace(
-      selectedRole === 'asisten' ? '/asisten' : '/praktikan/jadwal',
-    );
+    router.replace(selectedRole === 'asisten' ? '/asisten' : '/praktikan/jadwal');
   }
 
   return (
-    <Screen edges={['top', 'left', 'right', 'bottom']}>
-      <View style={styles.page}>
-        <View style={styles.intro}>
-          <Text style={styles.title}>Presensi Praktikum</Text>
-          <Text style={styles.subtitle}>
-            Pilih peran dan identitas untuk mencatat kehadiran praktikum.
+    <View style={styles.screenContainer}>
+      {/* Bagian atas navy (±38%) */}
+      <View style={[styles.navyHeader, { paddingTop: insets.top + spacing.lg }]}>
+        <View style={styles.headerContent}>
+          <Text style={styles.appName}>Rawuh</Text>
+          <Text style={styles.tagline}>
+            Presensi praktikum dengan kode 4 digit.
           </Text>
+          <View style={styles.signatureMotif}>
+            <CodeCells variant="signature-navy" />
+          </View>
         </View>
+      </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Masuk sebagai</Text>
-          <View role="radiogroup" style={styles.roleGroup}>
-            {ROLE_OPTIONS.map((option) => {
-              const selected = selectedRole === option.role;
+      {/* Lembar terang bersudut atas membulat */}
+      <View style={[styles.sheetContainer, { paddingBottom: Math.max(insets.bottom, spacing.lg) }]}>
+        <View style={styles.sheetContent}>
+          <Text style={styles.sheetTitle}>Masuk sebagai</Text>
+
+          {/* Dua ubin peran */}
+          <View role="radiogroup" aria-label="Pilih peran" style={styles.roleTilesRow}>
+            {ROLES.map((item) => {
+              const active = selectedRole === item.role;
               return (
                 <Pressable
-                  key={option.role}
-                  onPress={() => handleRoleChange(option.role)}
+                  key={item.role}
+                  onPress={() => handleRoleChange(item.role)}
                   role="radio"
-                  aria-checked={selected}
+                  aria-checked={active}
+                  aria-label={`${item.label}, ${item.description}`}
                   style={({ pressed }) => [
-                    styles.optionRow,
-                    selected && styles.optionRowSelected,
-                    pressed && styles.pressed,
+                    styles.roleTile,
+                    active && styles.roleTileActive,
+                    pressed && { opacity: PRESSED_OPACITY },
                   ]}
                 >
-                  <RadioDot selected={selected} />
-                  <View style={styles.optionText}>
-                    <Text style={styles.optionTitle}>{option.label}</Text>
-                    <Text style={styles.optionDescription}>{option.description}</Text>
+                  <View style={styles.roleTileHeader}>
+                    <Text style={[styles.roleTileLabel, active && styles.roleTileLabelActive]}>
+                      {item.label}
+                    </Text>
+                    {active ? <CheckmarkIcon /> : null}
                   </View>
+                  <Text style={styles.roleTileDesc}>{item.description}</Text>
                 </Pressable>
               );
             })}
           </View>
-        </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Pilih identitas</Text>
-          {selectedRole === null ? (
-            <Text style={styles.hint}>Pilih peran dulu untuk melihat daftar identitas.</Text>
-          ) : (
-            <View
-              role="radiogroup"
-              style={[styles.identityGroup, twoColumns && styles.identityGroupWide]}
-            >
-              {identityOptions.map((user) => {
-                const selected = selectedUserId === user.id;
-                return (
-                  <Pressable
-                    key={user.id}
-                    onPress={() => setSelectedUserId(user.id)}
-                    role="radio"
-                    aria-checked={selected}
-                    style={({ pressed }) => [
-                      styles.identityRow,
-                      twoColumns && styles.identityRowWide,
-                      selected && styles.optionRowSelected,
-                      pressed && styles.pressed,
-                    ]}
-                  >
-                    <InitialsBadge name={user.name} />
-                    <View style={styles.optionText}>
-                      <Text style={styles.identityName}>{user.name}</Text>
-                      <Text style={styles.optionDescription}>{identityDetail(user)}</Text>
-                    </View>
-                    <RadioDot selected={selected} />
-                  </Pressable>
-                );
-              })}
+          {/* Pilih nama */}
+          {selectedRole ? (
+            <View style={styles.identitySection}>
+              <Text style={styles.identitySectionTitle}>Pilih nama</Text>
+              <View
+                role="radiogroup"
+                aria-label={`Daftar nama ${selectedRole}`}
+                style={styles.identityList}
+              >
+                {identityOptions.map((user: User) => {
+                  const selected = selectedUserId === user.id;
+                  const label = user.kelas ? `${user.name} (Kelas ${user.kelas})` : user.name;
+                  return (
+                    <Pressable
+                      key={user.id}
+                      onPress={() => setSelectedUserId(user.id)}
+                      role="radio"
+                      aria-checked={selected}
+                      aria-label={label}
+                      style={({ pressed }) => [
+                        styles.radioRow,
+                        selected && styles.radioRowSelected,
+                        pressed && { opacity: PRESSED_OPACITY },
+                      ]}
+                    >
+                      <RadioDot selected={selected} />
+                      <View style={styles.radioTextWrap}>
+                        <Text style={[styles.radioName, selected && styles.radioNameSelected]}>
+                          {user.name}
+                        </Text>
+                        {user.kelas ? (
+                          <Text style={styles.radioSub}>Kelas {user.kelas}</Text>
+                        ) : null}
+                      </View>
+                    </Pressable>
+                  );
+                })}
+              </View>
             </View>
-          )}
-        </View>
+          ) : null}
 
-        <View style={styles.footer}>
-          <Button label={buttonLabel} onPress={handleContinue} disabled={!canContinue} />
-          <Text style={styles.note}>
-            Mode demo. Data kembali ke kondisi awal saat aplikasi ditutup.
-          </Text>
+          {/* Tombol Lanjut */}
+          <View style={styles.buttonWrapper}>
+            <Button
+              label="Lanjut"
+              disabled={!canContinue}
+              onPress={handleContinue}
+              accessibilityLabel="Lanjut ke halaman utama"
+            />
+          </View>
         </View>
       </View>
-    </Screen>
+    </View>
   );
 }
 
-function getContinueLabel(role: Role | null): string {
-  if (role === 'asisten') {
-    return 'Masuk sebagai Asisten';
-  }
-  if (role === 'praktikan') {
-    return 'Masuk sebagai Praktikan';
-  }
-  return 'Lanjutkan';
-}
-
-/** Ukuran badge inisial nama (diameter lingkaran). */
-const INITIALS_BADGE_SIZE = 36;
-
-/** Ukuran dan ketebalan tombol radio pilihan. */
-const RADIO_SIZE = 20;
-const RADIO_BORDER_WIDTH = 2;
-const RADIO_CORE_SIZE = 10;
-
-function identityDetail(user: User): string {
-  return user.kelas ? `Kelas ${user.kelas}` : 'Asisten';
-}
-
 const styles = StyleSheet.create({
-  page: { gap: spacing.xl },
-  intro: { gap: spacing.sm, paddingTop: spacing.sm },
-  title: { ...typography.display, color: colors.text },
-  subtitle: { ...typography.body, color: colors.textMuted },
-  section: { gap: spacing.md },
-  sectionTitle: { ...typography.heading, color: colors.text },
-  roleGroup: { gap: spacing.sm },
-  identityGroup: { gap: spacing.sm },
-  identityGroupWide: { flexDirection: 'row', flexWrap: 'wrap' },
-  optionRow: {
-    minHeight: layout.minTouch,
-    flexDirection: 'row',
+  screenContainer: {
+    flex: 1,
+    backgroundColor: colors.primary,
+  },
+  navyHeader: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: spacing.xl,
+    paddingBottom: spacing.xl,
+    justifyContent: 'center',
     alignItems: 'center',
-    gap: spacing.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.md,
-    backgroundColor: colors.surface,
   },
-  optionRowSelected: {
-    borderColor: colors.primary,
+  headerContent: {
+    maxWidth: layout.maxContentWidth,
+    width: '100%',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  appName: {
+    fontSize: 26,
+    lineHeight: 32,
+    fontWeight: '700',
+    color: colors.onPrimary,
+    textAlign: 'center',
+  },
+  tagline: {
+    fontSize: typography.body.fontSize,
+    lineHeight: typography.body.lineHeight,
+    color: colors.onPrimary,
+    opacity: 0.85,
+    textAlign: 'center',
+  },
+  signatureMotif: {
+    marginTop: spacing.md,
+  },
+  sheetContainer: {
+    flex: 1,
     backgroundColor: colors.background,
+    borderTopLeftRadius: radius.identity,
+    borderTopRightRadius: radius.identity,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xl,
   },
-  pressed: { opacity: PRESSED_OPACITY },
-  optionText: { flex: 1, gap: spacing.xs },
-  optionTitle: { ...typography.body, fontWeight: typography.label.fontWeight, color: colors.text },
-  optionDescription: {
-    ...typography.label,
-    fontWeight: typography.body.fontWeight,
+  sheetContent: {
+    maxWidth: layout.maxContentWidth,
+    width: '100%',
+    alignSelf: 'center',
+    flex: 1,
+  },
+  sheetTitle: {
+    fontSize: typography.heading.fontSize,
+    lineHeight: typography.heading.lineHeight,
+    fontWeight: typography.heading.fontWeight,
+    color: colors.text,
+    marginBottom: spacing.md,
+  },
+  roleTilesRow: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  roleTile: {
+    flex: 1,
+    minHeight: layout.minTouch + 24,
+    backgroundColor: colors.surface,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    borderRadius: radius.tile,
+    padding: spacing.md,
+    justifyContent: 'space-between',
+  },
+  roleTileActive: {
+    borderColor: colors.primary,
+    borderWidth: 2,
+    backgroundColor: 'rgba(0, 20, 74, 0.04)',
+  },
+  roleTileHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.xs,
+  },
+  roleTileLabel: {
+    fontSize: typography.heading.fontSize,
+    fontWeight: '700',
+    color: colors.text,
+  },
+  roleTileLabelActive: {
+    color: colors.primary,
+  },
+  roleTileDesc: {
+    fontSize: typography.caption.fontSize,
+    lineHeight: typography.caption.lineHeight,
     color: colors.textMuted,
   },
-  identityRow: {
-    minHeight: layout.minTouch,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.md,
-    backgroundColor: colors.surface,
-  },
-  identityRowWide: { flexBasis: '48%', flexGrow: 1 },
-  identityName: { ...typography.body, fontWeight: typography.label.fontWeight, color: colors.text },
-  initialsBadge: {
-    width: INITIALS_BADGE_SIZE,
-    height: INITIALS_BADGE_SIZE,
+  checkFrame: {
+    width: 20,
+    height: 20,
     borderRadius: radius.full,
+    backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.background,
+  },
+  checkStemShort: {
+    position: 'absolute',
+    width: 2,
+    height: 5,
+    backgroundColor: colors.onPrimary,
+    transform: [{ rotate: '-45deg' }, { translateX: -2.5 }, { translateY: 0.5 }],
+  },
+  checkStemLong: {
+    position: 'absolute',
+    width: 2,
+    height: 9,
+    backgroundColor: colors.onPrimary,
+    transform: [{ rotate: '45deg' }, { translateX: 1.5 }, { translateY: -1 }],
+  },
+  identitySection: {
+    flex: 1,
+    gap: spacing.sm,
+  },
+  identitySectionTitle: {
+    fontSize: typography.label.fontSize,
+    fontWeight: typography.label.fontWeight,
+    color: colors.textMuted,
+  },
+  identityList: {
+    gap: spacing.sm,
+  },
+  radioRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minHeight: layout.minTouch,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
     borderWidth: 1,
     borderColor: colors.border,
+    gap: spacing.md,
   },
-  initialsText: { ...typography.label, color: colors.textMuted },
+  radioRowSelected: {
+    borderColor: colors.primary,
+    backgroundColor: 'rgba(0, 20, 74, 0.03)',
+  },
+  radioTextWrap: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  radioName: {
+    fontSize: typography.body.fontSize,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  radioNameSelected: {
+    color: colors.primary,
+  },
+  radioSub: {
+    fontSize: typography.caption.fontSize,
+    color: colors.textMuted,
+    fontWeight: typography.label.fontWeight,
+  },
   radio: {
-    width: RADIO_SIZE,
-    height: RADIO_SIZE,
+    width: 20,
+    height: 20,
     borderRadius: radius.full,
-    borderWidth: RADIO_BORDER_WIDTH,
+    borderWidth: 2,
     borderColor: colors.borderStrong,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  radioSelected: { borderColor: colors.primary },
+  radioSelected: {
+    borderColor: colors.primary,
+  },
   radioCore: {
-    width: RADIO_CORE_SIZE,
-    height: RADIO_CORE_SIZE,
+    width: 10,
+    height: 10,
     borderRadius: radius.full,
     backgroundColor: colors.primary,
   },
-  hint: { ...typography.body, color: colors.textMuted },
-  footer: { gap: spacing.md, paddingTop: spacing.sm },
-  note: { ...typography.caption, color: colors.textMuted, textAlign: 'center' },
+  buttonWrapper: {
+    marginTop: spacing.lg,
+  },
 });
