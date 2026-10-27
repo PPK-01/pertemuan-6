@@ -1,25 +1,33 @@
 import { router } from 'expo-router';
 import { useMemo } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { FlatList, StyleSheet, Text, View } from 'react-native';
 
+import { AppBar } from '@/components/ui/AppBar';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { Card } from '@/components/ui/Card';
+import { IdentityCard } from '@/components/ui/IdentityCard';
 import { Screen } from '@/components/ui/Screen';
 import { RiwayatItem } from '@/features/praktikan/RiwayatItem';
-import { useAttendanceByUser, useCurrentUser, useSessionsForUser } from '@/store/appStore';
+import {
+  useAppStore,
+  useAttendanceByUser,
+  useCurrentUser,
+  useSessionsForUser,
+} from '@/store/appStore';
 import { colors } from '@/theme/colors';
-import { radius, spacing } from '@/theme/spacing';
+import { spacing } from '@/theme/spacing';
 import { typography } from '@/theme/typography';
 import type { Attendance, Session } from '@/types';
 
-/** Tinggi bar progress ringkasan kehadiran. */
-const SUMMARY_TRACK_HEIGHT = 8;
-
 type RiwayatEntry = { session: Session; attendance: Attendance };
+
+function ListSeparator() {
+  return <View style={styles.separator} />;
+}
 
 export default function RiwayatScreen() {
   const currentUser = useCurrentUser();
   const userId = currentUser?.id ?? '';
+  const resetIdentity = useAppStore((state) => state.resetIdentity);
   const sessions = useSessionsForUser(userId);
   const attendances = useAttendanceByUser(userId);
 
@@ -33,115 +41,106 @@ export default function RiwayatScreen() {
         const attendance = attendanceBySession.get(session.id);
         return attendance ? [{ session, attendance }] : [];
       })
-      .sort(
-        (a, b) =>
-          new Date(b.attendance.timestamp).getTime() -
-          new Date(a.attendance.timestamp).getTime(),
-      );
+      .sort((a, b) => b.attendance.timestamp.localeCompare(a.attendance.timestamp));
   }, [sessions, attendances]);
-
-  const countedSessions = useMemo(
-    () => sessions.filter((session) => session.status !== 'scheduled'),
-    [sessions],
-  );
-
-  const percent =
-    countedSessions.length > 0 ? Math.round((entries.length / countedSessions.length) * 100) : 0;
 
   if (!currentUser) {
     return (
-      <Screen edges={['left', 'right']}>
-        <EmptyState
-          title="Identitas tidak ditemukan"
-          message="Kembali ke halaman awal untuk memilih peran dan identitas."
-        />
-      </Screen>
+      <View style={styles.container}>
+        <AppBar subtitle="Riwayat" />
+        <Screen edges={['left', 'right', 'bottom']}>
+          <EmptyState
+            title="Identitas tidak ditemukan"
+            message="Kembali ke halaman awal untuk memilih peran dan identitas."
+          />
+        </Screen>
+      </View>
     );
   }
 
   return (
-    <Screen edges={['left', 'right']}>
-      <View style={styles.page}>
-        <View style={styles.intro}>
-          <Text style={styles.title}>Riwayat kehadiran</Text>
-          <Text style={styles.meta}>
-            {entries.length} dari {countedSessions.length} sesi
-            {currentUser.kelas ? ` untuk Kelas ${currentUser.kelas}` : ''}
-          </Text>
-        </View>
+    <View style={styles.container}>
+      <AppBar subtitle="Riwayat" />
 
-        {countedSessions.length > 0 ? (
-          <Card>
-            <View style={styles.summary}>
-              <View style={styles.summaryHeader}>
-                <Text style={styles.summaryTitle}>Kehadiran</Text>
-                <Text style={styles.summaryValue}>{percent}%</Text>
-              </View>
-              <View
-                role="progressbar"
-                aria-valuemin={0}
-                aria-valuemax={countedSessions.length}
-                aria-valuenow={entries.length}
-                style={styles.track}
-              >
-                <View style={[styles.trackFill, { width: `${percent}%` }]} />
-              </View>
-              <Text style={styles.summaryMeta}>
-                {entries.length} sesi dihadiri, {countedSessions.length - entries.length} sesi belum
-                dihadiri
-              </Text>
-            </View>
-          </Card>
-        ) : null}
+      <Screen scroll={false} edges={['left', 'right']}>
+        <View style={styles.screenInner}>
+          <FlatList
+            data={entries}
+            keyExtractor={(item) => item.attendance.id}
+            renderItem={({ item }) => (
+              <RiwayatItem
+                session={item.session}
+                attendance={item.attendance}
+              />
+            )}
+            ItemSeparatorComponent={ListSeparator}
+            contentContainerStyle={styles.listContent}
+            ListHeaderComponent={
+              <View style={styles.headerBlock}>
+                <IdentityCard
+                  name={currentUser.name}
+                  keyInfo={currentUser.kelas ? `Kelas ${currentUser.kelas}` : 'Praktikan'}
+                  supportingInfo="Praktikan"
+                  onGantiPeran={resetIdentity}
+                />
 
-        {entries.length === 0 ? (
-          <EmptyState
-            title="Belum ada riwayat"
-            message="Kehadiran yang sudah dicatat akan muncul di sini."
-            action={
-              countedSessions.length > 0
-                ? { label: 'Lihat jadwal', onPress: () => router.navigate('/praktikan/jadwal') }
-                : undefined
+                {/* Kalimat Ringkasan */}
+                <View style={styles.summaryBox}>
+                  <Text style={styles.summaryText}>
+                    {`${entries.length} sesi tercatat hadir.`}
+                  </Text>
+                </View>
+              </View>
+            }
+            ListEmptyComponent={
+              <EmptyState
+                title="Belum ada presensi"
+                message="Belum ada presensi. Isi kode di sesi yang sedang dibuka."
+                action={{
+                  label: 'Lihat jadwal',
+                  onPress: () => router.push('/praktikan/jadwal'),
+                }}
+              />
             }
           />
-        ) : (
-          <View style={styles.list}>
-            {entries.map(({ session, attendance }) => (
-              <RiwayatItem key={attendance.id} session={session} attendance={attendance} />
-            ))}
-          </View>
-        )}
-      </View>
-    </Screen>
+        </View>
+      </Screen>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  page: { gap: spacing.xl },
-  intro: { gap: spacing.xs },
-  title: { ...typography.title, color: colors.text },
-  meta: { ...typography.label, color: colors.textMuted },
-  summary: { gap: spacing.sm },
-  summaryHeader: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    justifyContent: 'space-between',
-  },
-  summaryTitle: { ...typography.heading, color: colors.text },
-  summaryValue: { ...typography.title, color: colors.text, fontVariant: ['tabular-nums'] },
-  track: {
-    height: SUMMARY_TRACK_HEIGHT,
-    borderRadius: radius.full,
+  container: {
+    flex: 1,
     backgroundColor: colors.background,
+  },
+  screenInner: {
+    flex: 1,
+  },
+  listContent: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.xxl + 40,
+  },
+  headerBlock: {
+    gap: spacing.md,
+    marginBottom: spacing.md,
+  },
+  summaryBox: {
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    backgroundColor: colors.surface,
+    borderRadius: 10,
     borderWidth: 1,
     borderColor: colors.border,
-    overflow: 'hidden',
   },
-  trackFill: {
-    height: '100%',
-    borderRadius: radius.full,
-    backgroundColor: colors.feedback.success.text,
+  summaryText: {
+    fontSize: typography.body.fontSize,
+    fontWeight: '600',
+    color: colors.text,
+    fontVariant: ['tabular-nums'],
   },
-  summaryMeta: { ...typography.caption, color: colors.textMuted },
-  list: { gap: spacing.md },
+  separator: {
+    height: spacing.sm,
+  },
 });
