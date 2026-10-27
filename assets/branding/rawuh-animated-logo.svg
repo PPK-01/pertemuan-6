@@ -4,10 +4,8 @@
       .bg-card { fill: #00144A; stroke: #233B6E; stroke-width: 1.5; rx: 16px; }
       .header-strip { fill: #001C66; rx: 14px; }
       .header-accent { fill: #FFC400; }
-      .brand-title { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-weight: 800; font-size: 42px; fill: #FFFFFF; letter-spacing: -0.5px; }
-      .brand-sub { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-weight: 500; font-size: 14px; fill: #8A9BB8; letter-spacing: 0.2px; }
-      .pill-badge { fill: #0B255E; stroke: #2E4B82; stroke-width: 1; rx: 20px; }
-      .badge-text { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-weight: 600; font-size: 11px; fill: #FFC400; letter-spacing: 1.2px; text-transform: uppercase; }
+      .brand-title { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-weight: 800; font-size: 44px; fill: #FFFFFF; letter-spacing: -0.5px; }
+      .brand-sub { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-weight: 500; font-size: 14.5px; fill: #8A9BB8; letter-spacing: 0.2px; }
       .cell-box { fill: #00123D; stroke: #314B7D; stroke-width: 1.5; rx: 10px; }
       .cell-box-accent { stroke: #FFC400; stroke-width: 2; fill: #091C4B; }
       .cell-num { font-family: 'SF Mono', Monaco, Menlo, Consolas, monospace; font-weight: 700; font-size: 28px; fill: #FFFFFF; text-anchor: middle; dominant-baseline: central; }
@@ -32,24 +30,19 @@
     <text x="36" y="44" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="700" font-size="12px" fill="#D3DEEE" letter-spacing="1.5px">KARTU PRESENSI PRAKTIKUM DIGITAL</text>
 
     <!-- Left Brand Section -->
-    <g transform="translate(36, 102)">
-      <!-- Role Badge -->
-      <rect x="0" y="0" width="156" height="24" class="pill-badge" />
-      <text x="12" y="16" class="badge-text">Expo SDK 57 • OFFLINE</text>
-      
+    <g transform="translate(36, 120)">
       <!-- Brand Name -->
-      <text x="0" y="60" class="brand-title">RAWUH</text>
+      <text x="0" y="38" class="brand-title">RAWUH</text>
       
-      <!-- Accent Tag (Sejajar di sebelah kanan dan sejajar bagian bawah tulisan RAWUH) -->
-      <rect x="174" y="38" width="54" height="22" rx="4" fill="#FFC400" />
-      <text x="182" y="53" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="800" font-size="11px" fill="#00144A" letter-spacing="0.8px">V1.0</text>
+      <!-- Accent Tag (Sejajar di sebelah kanan dan rata bawah dengan tulisan RAWUH) -->
+      <rect x="182" y="16" width="54" height="22" rx="4" fill="#FFC400" />
+      <text x="190" y="31" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="800" font-size="11px" fill="#00144A" letter-spacing="0.8px">V1.0</text>
       
       <!-- Subtitle Description -->
-      <text x="0" y="88" class="brand-sub">Sistem presensi praktikum presisi dengan validasi token 4-digit</text>
-      <text x="0" y="108" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="400" font-size="12px" fill="#5E759B">Offline-first • Zero-shadow Card UI • Aksesibilitas WCAG AA (4.5:1)</text>
+      <text x="0" y="70" class="brand-sub">Sistem presensi praktikum presisi dengan validasi token 4-digit</text>
     </g>
 
-    <!-- Right Interactive Token Code Cells (Static, no pulse) -->
+    <!-- Right Interactive Token Code Cells -->
     <g class="token-group">
       <!-- Section Tag -->
       <text x="518" y="105" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="600" font-size="11px" fill="#8A9BB8" letter-spacing="1px">TOKEN AKTIF</text>
