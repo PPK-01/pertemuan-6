@@ -31,7 +31,6 @@ export function Card({ children, onPress, accessibilityLabel, style }: CardProps
   }
 
   return (
-    // Pengecualian aturan ARIA: `accessible` (menggabungkan isi jadi satu elemen) tidak punya padanan ARIA di RN.
     <View
       accessible={accessibilityLabel !== undefined}
       aria-label={accessibilityLabel}
