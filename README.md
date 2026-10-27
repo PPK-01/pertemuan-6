@@ -1,153 +1,129 @@
-# Presensi Praktikum
+<p align="center">
+  <img src="assets/branding/rawuh-animated-logo.svg" alt="Rawuh - Sistem Presensi Praktikum" width="100%">
+</p>
 
-Aplikasi mobile berbasis **React Native (Expo SDK 57)** untuk pencatatan kehadiran sesi praktikum secara interaktif, efisien, dan offline-first (in-memory demo) dengan dua perspektif peran: **Asisten Lab** dan **Praktikan**.
-
-[![Expo SDK 57](https://img.shields.io/badge/Expo-SDK_57-000020?style=for-the-badge&logo=expo&logoColor=white)](https://docs.expo.dev/)
-[![React Native 0.86](https://img.shields.io/badge/React_Native-0.86-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://reactnative.dev/)
-[![TypeScript Strict](https://img.shields.io/badge/TypeScript-Strict_Typed-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Zustand](https://img.shields.io/badge/State-Zustand_5-443e38?style=for-the-badge)](https://zustand-demo.pmnd.rs/)
-[![WCAG AA](https://img.shields.io/badge/Accessibility-WCAG_AA_(4.5%3A1)-166534?style=for-the-badge)](https://www.w3.org/WAI/WCAG21/quickref/)
+<p align="center">
+  <a href="https://docs.expo.dev/"><img src="https://img.shields.io/badge/Expo-SDK_57-000020?style=flat-square&logo=expo&logoColor=white" alt="Expo SDK 57" /></a>
+  <a href="https://reactnative.dev/"><img src="https://img.shields.io/badge/React_Native-0.86-61DAFB?style=flat-square&logo=react&logoColor=black" alt="React Native 0.86" /></a>
+  <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-Strict_Typed-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript Strict" /></a>
+  <a href="https://zustand-demo.pmnd.rs/"><img src="https://img.shields.io/badge/State-Zustand_5-443e38?style=flat-square" alt="Zustand 5" /></a>
+  <a href="https://www.w3.org/WAI/WCAG21/quickref/"><img src="https://img.shields.io/badge/Accessibility-WCAG_AA_(4.5%3A1)-166534?style=flat-square" alt="WCAG AA" /></a>
+</p>
 
 ---
 
 ## Ringkasan Proyek
 
-Aplikasi ini dikembangkan untuk mendemokan sistem presensi presisi tanpa dependensi database eksternal. Seluruh alur kerja menggunakan state management lokal berbasis Zustand dengan data dummy terstruktur.
+**Rawuh** adalah aplikasi mobile pencatatan kehadiran sesi praktikum berbasis **React Native** dan **Expo SDK 57**. Didesain dengan filosofi **"Kartu Mahasiswa" (Identity Card UI)** yang mengedepankan presisi visual tanpa dekorasi bayangan berlebih (zero-shadow), aplikasi ini berjalan secara offline-first dengan dua perspektif peran pengguna: **Asisten Lab** dan **Praktikan**.
 
 > [!NOTE]
-> Proyek dirancang dengan pola *parallel development without merge conflicts*—pemisahan ketat kepemilikan file antara tim frontend (UI Kit & Layar Asisten) dan tim backend/logika (Store & Layar Praktikan).
-
-### Fitur Utama
-
-- **Switch Peran Instan (FR-01):** Berganti konteks pengguna antara Asisten dan Praktikan kapan saja tanpa alur autentikasi/login yang memakan waktu demo.
-- **Manajemen Sesi Asisten (FR-02 – FR-06, FR-10):**
-  - Pembuatan sesi baru dengan validasi form (topik, ruang, jadwal ISO UTC).
-  - Pembukaan sesi dengan auto-generated **Kode Token 4-Digit**.
-  - Penutupan sesi via modal bottom-sheet konfirmasi.
-  - Rekapitulasi kehadiran *real-time* (daftar hadir vs belum hadir, rasio kelas).
-- **Alur Presensi Praktikan (FR-07 – FR-09, FR-11):**
-  - Filter otomatis: Praktikan hanya melihat jadwal kelasnya sendiri.
-  - Presensi berbasis kode 4 digit dengan proteksi status sesi dan validasi duplikasi.
-  - Riwayat presensi personal lengkap dengan stempel waktu presisi.
+> Proyek dirancang dengan pola *parallel development without merge conflicts*—pemisahan ketat kepemilikan berkas antara tim antarmuka (UI Kit & Layar Asisten) dan tim logika (Store & Layar Praktikan).
 
 ---
 
-## Tech Stack & Dependensi
+## Fitur Utama
 
-| Layer | Teknologi | Catatan Teknis |
+### 1. Peran Asisten Lab
+- **Manajemen Sesi Praktikum:** Membuat sesi baru lengkap dengan topik bahasan, ruang lab, tanggal, dan durasi.
+- **Generator Token 4-Digit:** Menghasilkan kode token numerik 4-digit acak saat sesi dibuka untuk dimasukkan praktikan.
+- **Tutup & Batalkan Sesi:** Mengakhiri sesi yang sedang berjalan atau membatalkan sesi sebelum dimulai.
+- **Rekap Kehadiran Realtime:** Memantau daftar praktikan yang sudah hadir, izin, sakit, atau alpa, lengkap dengan penghitungan persentase kehadiran per sesi.
+
+### 2. Peran Praktikan
+- **Jadwal Sesi Terstruktur:** Menampilkan daftar sesi terjadwal, dibuka, maupun yang telah selesai menggunakan daftar tunggal efisien (`FlatList`).
+- **Verifikasi Token 4-Digit:** Input token 4 sel otomatis (*auto-focus & backspace navigation*) untuk memvalidasi kehadiran.
+- **Aksi Cepat Tombol Bulat:** Tombol navigasi bawah tengah (*context-aware center button*) langsung membuka sesi aktif yang sedang dibuka.
+- **Riwayat & Status Presensi:** Memantau riwayat kehadiran lengkap dengan lencana status (Hadir, Terlambat, Izin, Sakit, Alpa).
+
+### 3. Switch Peran Instan
+- Berganti konteks pengguna antara Asisten dan Praktikan kapan saja tanpa alur login/logout yang memperlambat demonstrasi.
+
+---
+
+## Sistem Desain: "Kartu Mahasiswa"
+
+Aplikasi Rawuh mematuhi panduan desain ketat yang terdokumentasi di [DESIGN.md](./DESIGN.md):
+
+| Elemen | Token / Nilai | Penerapan |
 | :--- | :--- | :--- |
-| **Framework** | Expo SDK 57 (React Native 0.86) | Managed workflow, Hermes engine, New Architecture |
-| **Routing** | Expo Router (`src/app/`) | File-based routing, native stack navigation |
-| **State Management**| Zustand v5 | Single source of truth, shallow selector hooks, decoupled action triggers |
-| **Styling & Theme** | Native `StyleSheet` + Token Semantik | Token terstandarisasi di `src/theme/` (colors, spacing, typography) |
-| **Animasi** | React Native `Animated` | Custom BottomSheet dengan single-value driver & dukungan *Reduce Motion* |
-| **Aksesibilitas** | Safe Area & Accessibility APIs | `react-native-safe-area-context`, `KeyboardAvoidingView`, ARIA roles |
-| **Bahasa** | TypeScript Strict | Zero `any`, validasi kontrak data terpusat di `src/types/` |
+| **Warna Utama (Navy)** | `#00144A` | `AppBar`, kartu identitas, tombol primer |
+| **Aksen (Kuning)** | `#FFC400` | Garis aksen kartu, status dibuka, hanya di atas navy |
+| **Latar Belakang** | `#F4F6FB` | Warna dasar layar (kanvas aplikasi) |
+| **Permukaan Kartu** | `#FFFFFF` | Kontainer baris sesi, input field, bottom sheet |
+| **Border & Pemisah** | `#E5E7EB` (1px) | Pengganti drop-shadow / elevation |
+| **Target Sentuh** | Minimal 44 × 44 pt | Aksesibilitas tap target (WCAG 2.5.5) |
+| **Rasio Kontras** | Minimal 4.5:1 | Teks normal memenuhi standar WCAG AA |
 
 ---
 
-## Struktur Folder
+## Struktur Direktori
 
 ```text
 pertemuan-6/
-├── assets/                  # Asset grafis, ikon, dan splash screen
-├── docs/
-│   └── SRS.md              # Software Requirements Specification (v1.2)
+├── assets/
+│   └── branding/
+│       ├── rawuh-animated-logo.svg   # Logo animasi SVG master untuk README
+│       └── rawuh-mark.svg            # Ikon mark vektor Rawuh
 ├── src/
-│   ├── app/                # Layar aplikasi (Expo Router)
-│   │   ├── _layout.tsx     # Root stack layout
-│   │   ├── index.tsx       # Layar pemilihan peran & identitas
-│   │   ├── asisten/        # Alur layar asisten (daftar, buat, rekap)
-│   │   └── praktikan/      # Alur layar praktikan (jadwal, presensi, riwayat)
-│   ├── components/         # Design system & modular UI Kit
-│   │   ├── session/        # Komponen spesifik domain (SessionCard, StatusBadge, SessionInfo)
-│   │   └── ui/             # Komponen primitif (Button, TextField, Card, BottomSheet, Screen)
-│   ├── data/
-│   │   └── dummy.ts        # Fixture data asisten, praktikan, dan jadwal kelas
-│   ├── store/
-│   │   └── appStore.ts     # Zustand store, actions, selectors, dan hook useRekap
-│   ├── theme/              # Desain token semantik
-│   │   ├── colors.ts       # Palet warna dengan rasio kontras WCAG terverifikasi
-│   │   ├── spacing.ts      # Skala layout, radius sudut, dan touch targets
-│   │   └── typography.ts   # Skala tipografi responsif
-│   ├── types/
-│   │   └── index.ts        # Kontrak tipe data (User, Session, Attendance, Rekap)
-│   └── utils/
-│       ├── id.ts           # Generator ID unik dan generator kode sesi 4 digit
-│       └── time.ts         # Formatter waktu ISO UTC dan parsing jam
-├── app.json                # Konfigurasi metadata Expo
-├── package.json            # Daftar dependensi modul
-└── tsconfig.json           # Konfigurasi TypeScript path aliases (@/*)
+│   ├── app/                          # Expo Router file-based screens
+│   │   ├── _layout.tsx               # Root layout & status bar provider
+│   │   ├── index.tsx                 # Selector switch peran & profil
+│   │   ├── asisten/                  # Alur & layar asisten lab
+│   │   │   ├── index.tsx             # Beranda asisten & daftar sesi
+│   │   │   ├── buat.tsx              # Form pembuatan sesi praktikum
+│   │   │   └── sesi/[id].tsx         # Detail sesi & rekap kehadiran
+│   │   └── praktikan/                # Alur & layar praktikan
+│   │       ├── (tabs)/
+│   │       │   ├── _layout.tsx       # Tab bar kustom dengan tombol tengah
+│   │       │   ├── jadwal.tsx        # Layar jadwal sesi
+│   │       │   └── riwayat.tsx       # Layar riwayat kehadiran
+│   │       └── sesi/[id].tsx         # Layar input token 4-digit
+│   ├── components/
+│   │   ├── session/                  # Komponen domain sesi (SessionRow, CodeDisplay, StatusBadge)
+│   │   └── ui/                       # Komponen atomik (AppBar, IdentityCard, Tile, CodeCells, Button)
+│   ├── features/
+│   │   ├── asisten/                  # Modul fitur asisten (RekapList, StatusActionSheet)
+│   │   └── praktikan/                # Modul fitur praktikan (PraktikanTabBar, PresensiForm)
+│   ├── store/                        # Zustand store (appStore.ts & selector)
+│   └── theme/                        # Desain token (colors.ts, spacing.ts, typography.ts)
+├── DESIGN.md                         # Spesifikasi lengkap desain sistem Rawuh
+└── package.json
 ```
 
 ---
 
-## Panduan Memulai
+## Memulai Cepat
 
 ### Prasyarat
+- Node.js versi 18 atau lebih baru.
+- Aplikasi **Expo Go** pada perangkat fisik atau simulator Android / iOS.
 
-- [Node.js](https://nodejs.org/) (versi LTS direkomendasikan, v20+)
-- [Expo Go](https://expo.dev/go) di perangkat fisik atau emulator Android Studio
-
-### Instalasi
-
-1. Clone repositori:
-   ```bash
-   git clone https://github.com/PPK-01/pertemuan-6.git
-   cd pertemuan-6
-   ```
-
-2. Pasang dependensi:
-   ```bash
-   npm install
-   ```
-
-### Menjalankan Aplikasi
-
-- **Dev Server Metro:**
-  ```bash
-  npx expo start
-  ```
-- **Jalankan di Web Preview:**
-  ```bash
-  npx expo start --web
-  ```
-- **Jalankan di Android Emulator:**
-  ```bash
-  npx expo start --android
-  ```
-
-### Verifikasi Kualitas Kode
-
-Jalankan type-check sebelum membuat commit atau pull request:
+### Instalasi Dependensi
 ```bash
-npx tsc --noEmit
+npm install
 ```
 
----
-
-## Konvensi Desain & Standar UI
-
-Sesuai dengan panduan teknis pada dokumen SRS:
-
-1. **Lightweight & Native:** Tidak menggunakan library UI pihak ketiga yang berat (seperti Paper, NativeBase, atau Tamagui). Seluruh komponen dibangun menggunakan primitif React Native dan `StyleSheet`.
-2. **Kontras & Keterbacaan:** Semua kombinasi warna teks dan latar mematuhi standar rasio kontras minimal **4.5:1** (WCAG AA).
-3. **Sentuhan Ramah Jari:** Seluruh elemen interaktif memiliki target sentuh minimal **44x44 dp**.
-4. **Respon Keyboard:** Form dan layar input dilindungi oleh `KeyboardAvoidingView` dinamis untuk mencegah input tertutup keyboard virtual.
+### Menjalankan Server Pengembangan
+```bash
+npx expo start
+```
+- Tekan `a` untuk membuka Android Emulator.
+- Tekan `i` untuk membuka iOS Simulator.
+- Pindai kode QR menggunakan aplikasi **Expo Go** untuk pengujian langsung di ponsel.
 
 ---
 
-## Tim Pengembang & Pembagian Tugas
+## Verifikasi & Kualitas Kode
 
-- **Dhimas** — Project Manager (Koordinasi sprint, review kepatuhan SRS, rilis)
-- **Ibrahim** — Software Engineer (State store Zustand, alur layar Praktikan, validasi presensi)
-- **Elang** — Software Engineer (Design system UI Kit, alur layar Asisten, responsivitas)
+Jalankan serangkaian pemeriksaan kualitas kode sebelum melakukan pengiriman:
 
----
+```bash
+# Pemeriksaan tipe statis TypeScript
+npx tsc --noEmit
 
-## Referensi Terkait
+# Pemeriksaan kesehatan konfigurasi dan SDK Expo
+npx expo-doctor
+```
 
-- [Dokumentasi Lengkap SRS (Software Requirements Specification)](docs/SRS.md)
-- [Dokumentasi Resmi Expo SDK 57](https://docs.expo.dev/)
-- [Dokumentasi Expo Router](https://docs.expo.dev/router/introduction/)
-- [Dokumentasi Zustand State Management](https://docs.pmnd.rs/zustand/getting-started/introduction)
+> [!TIP]
+> Seluruh antarmuka telah diverifikasi kompatibel pada Expo SDK 57 dan siap diadaptasi ke Expo SDK 58 tanpa perubahan arsitektur data.
