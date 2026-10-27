@@ -22,7 +22,6 @@ export type TextFieldProps = {
   style?: StyleProp<ViewStyle>;
 };
 
-// Fokus ditandai border yang menebal; padding dikurangi selisihnya agar layout tidak bergeser.
 const BORDER_WIDTH = 1;
 const FOCUS_BORDER_WIDTH = 2;
 const FOCUS_INSET = FOCUS_BORDER_WIDTH - BORDER_WIDTH;
@@ -57,46 +56,55 @@ export function TextField({
         maxLength={maxLength}
         autoCapitalize={autoCapitalize}
         aria-label={label}
-        // Pengecualian aturan ARIA: RN tidak punya padanan ARIA untuk hint, dan TalkBack membacakannya.
-        accessibilityHint={message}
+        aria-describedby={message ? `${label}-hint` : undefined}
+        aria-invalid={hasError}
         style={[
           styles.input,
-          focused && styles.inputFocused,
-          // Error menang atas fokus untuk warna; fokus tetap terlihat dari tebal border.
           hasError && styles.inputError,
+          focused && !hasError && styles.inputFocused,
         ]}
       />
       {message ? (
-        <Text style={[styles.message, hasError && styles.messageError]}>{message}</Text>
+        <Text
+          nativeID={`${label}-hint`}
+          style={[styles.message, hasError && styles.messageError]}
+        >
+          {message}
+        </Text>
       ) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { gap: spacing.sm },
+  container: { gap: spacing.xs },
   label: { ...typography.label, color: colors.text },
   input: {
     ...typography.body,
-    color: colors.text,
     minHeight: layout.minTouch,
     borderWidth: BORDER_WIDTH,
     borderColor: colors.borderStrong,
     borderRadius: radius.md,
     backgroundColor: colors.surface,
+    color: colors.text,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
-    // Web: outline bawaan browser akan dobel dengan border fokus. 'solid' + 0 dipakai karena
-    // outline 'auto' tetap digambar Chrome berapa pun lebarnya.
-    ...(Platform.OS === 'web' ? { outlineStyle: 'solid', outlineWidth: 0 } : null),
+    ...Platform.select({
+      web: { outlineWidth: 0 } as const,
+    }),
   },
   inputFocused: {
-    borderWidth: FOCUS_BORDER_WIDTH,
     borderColor: colors.primary,
+    borderWidth: FOCUS_BORDER_WIDTH,
     paddingHorizontal: spacing.md - FOCUS_INSET,
     paddingVertical: spacing.sm - FOCUS_INSET,
   },
-  inputError: { borderColor: colors.feedback.danger.text },
+  inputError: {
+    borderColor: colors.feedback.danger.text,
+    borderWidth: FOCUS_BORDER_WIDTH,
+    paddingHorizontal: spacing.md - FOCUS_INSET,
+    paddingVertical: spacing.sm - FOCUS_INSET,
+  },
   message: { ...typography.caption, color: colors.textMuted },
   messageError: { color: colors.feedback.danger.text },
 });
