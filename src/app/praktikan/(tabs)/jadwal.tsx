@@ -1,107 +1,168 @@
 import { router } from 'expo-router';
 import { useMemo } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { FlatList, StyleSheet, Text, View } from 'react-native';
 
-import { Screen } from '@/components/ui/Screen';
+import { SessionRow } from '@/components/session/SessionRow';
+import { AppBar } from '@/components/ui/AppBar';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { SessionCard } from '@/components/session/SessionCard';
-import { useAttendanceByUser, useCurrentUser, useSessionsForUser } from '@/store/appStore';
+import { IdentityCard } from '@/components/ui/IdentityCard';
+import { Screen } from '@/components/ui/Screen';
+import {
+  useAppStore,
+  useAttendanceByUser,
+  useCurrentUser,
+  useSessionsForUser,
+} from '@/store/appStore';
 import { colors } from '@/theme/colors';
-import { spacing } from '@/theme/spacing';
+import { radius, spacing } from '@/theme/spacing';
 import { typography } from '@/theme/typography';
 import type { Session } from '@/types';
+
+function ListSeparator() {
+  return <View style={styles.separator} />;
+}
 
 export default function JadwalScreen() {
   const currentUser = useCurrentUser();
   const userId = currentUser?.id ?? '';
+  const resetIdentity = useAppStore((state) => state.resetIdentity);
   const sessions = useSessionsForUser(userId);
   const attendances = useAttendanceByUser(userId);
 
   const attendedSessionIds = useMemo(
-    () => new Set(attendances.map((attendance) => attendance.sessionId)),
+    () => new Set(attendances.map((a) => a.sessionId)),
     [attendances],
+  );
+
+  const activeOpenSessions = useMemo(
+    () => sessions.filter((s) => s.status === 'open' && !attendedSessionIds.has(s.id)),
+    [sessions, attendedSessionIds],
   );
 
   if (!currentUser) {
     return (
-      <Screen edges={['left', 'right']}>
-        <EmptyState
-          title="Identitas tidak ditemukan"
-          message="Kembali ke halaman awal untuk memilih peran dan identitas."
-        />
-      </Screen>
+      <View style={styles.container}>
+        <AppBar subtitle="Jadwal" />
+        <Screen edges={['left', 'right', 'bottom']}>
+          <EmptyState
+            title="Identitas tidak ditemukan"
+            message="Kembali ke halaman awal untuk memilih peran dan identitas."
+          />
+        </Screen>
+      </View>
     );
   }
 
   return (
-    <Screen edges={['left', 'right']}>
-      <View style={styles.page}>
-        <View style={styles.intro}>
-          <Text style={styles.greeting}>Halo, {currentUser.name}</Text>
-          <Text style={styles.meta}>
-            {currentUser.kelas ? `Kelas ${currentUser.kelas}` : 'Praktikan'},{' '}
-            {sessions.length} sesi
-          </Text>
-        </View>
+    <View style={styles.container}>
+      <AppBar subtitle="Jadwal" />
 
-        {sessions.length === 0 ? (
-          <EmptyState
-            title="Belum ada jadwal"
-            message="Sesi untuk kelasmu akan muncul di sini setelah asisten membuatnya."
-          />
-        ) : (
-          <View style={styles.list}>
-            {sessions.map((session) => {
-              const attended = attendedSessionIds.has(session.id);
+      <Screen scroll={false} edges={['left', 'right']}>
+        <View style={styles.screenInner}>
+          <FlatList
+            data={sessions}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => {
+              const attended = attendedSessionIds.has(item.id);
+              const isOpen = item.status === 'open' && !attended;
+
               return (
-                <SessionCard
-                  key={session.id}
-                  session={session}
+                <SessionRow
+                  session={item}
                   onPress={() =>
                     router.push({
                       pathname: '/praktikan/sesi/[id]',
-                      params: { id: session.id },
+                      params: { id: item.id },
                     })
                   }
-                  footer={<SessionFooter session={session} attended={attended} />}
+                  footerText={
+                    attended
+                      ? 'Sudah presensi'
+                      : isOpen
+                      ? 'Sedang dibuka • Tekan untuk presensi'
+                      : undefined
+                  }
                 />
               );
-            })}
-          </View>
-        )}
-      </View>
-    </Screen>
+            }}
+            ItemSeparatorComponent={ListSeparator}
+            contentContainerStyle={styles.listContent}
+            ListHeaderComponent={
+              <View style={styles.headerBlock}>
+                <IdentityCard
+                  name={currentUser.name}
+                  keyInfo={currentUser.kelas ? `Kelas ${currentUser.kelas}` : 'Praktikan'}
+                  supportingInfo="Praktikan"
+                  onGantiPeran={resetIdentity}
+                />
+
+                {/* Strip Sedang Dibuka */}
+                {activeOpenSessions.length > 0 ? (
+                  <View style={styles.openStrip}>
+                    <View style={styles.activeDot} />
+                    <Text style={styles.openStripText}>
+                      {activeOpenSessions.length === 1
+                        ? '1 sesi sedang dibuka untuk kelasmu'
+                        : `${activeOpenSessions.length} sesi sedang dibuka untuk kelasmu`}
+                    </Text>
+                  </View>
+                ) : null}
+              </View>
+            }
+            ListEmptyComponent={
+              <EmptyState
+                title="Belum ada jadwal"
+                message="Jadwal praktikum akan tampil di sini."
+              />
+            }
+          />
+        </View>
+      </Screen>
+    </View>
   );
 }
 
-function SessionFooter({ session, attended }: { session: Session; attended: boolean }) {
-  if (session.status === 'open') {
-    return (
-      <Text style={[styles.footerText, attended ? styles.successText : styles.primaryText]}>
-        {attended ? 'Sudah presensi' : 'Presensi sedang dibuka'}
-      </Text>
-    );
-  }
-
-  if (session.status === 'closed') {
-    return (
-      <Text style={[styles.footerText, attended ? styles.successText : styles.mutedText]}>
-        {attended ? 'Hadir' : 'Tidak hadir'}
-      </Text>
-    );
-  }
-
-  return <Text style={[styles.footerText, styles.mutedText]}>Belum dibuka</Text>;
-}
-
 const styles = StyleSheet.create({
-  page: { gap: spacing.xl },
-  intro: { gap: spacing.xs },
-  greeting: { ...typography.title, color: colors.text },
-  meta: { ...typography.label, color: colors.textMuted },
-  list: { gap: spacing.md },
-  footerText: { ...typography.label },
-  primaryText: { color: colors.primary },
-  successText: { color: colors.feedback.success.text },
-  mutedText: { color: colors.textMuted },
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  screenInner: {
+    flex: 1,
+  },
+  listContent: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.xxl + 40,
+  },
+  headerBlock: {
+    gap: spacing.md,
+    marginBottom: spacing.md,
+  },
+  openStrip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.status.open.bg,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: 'rgba(20, 96, 58, 0.25)',
+  },
+  activeDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.status.open.text,
+  },
+  openStripText: {
+    fontSize: typography.caption.fontSize,
+    lineHeight: typography.caption.lineHeight,
+    fontWeight: typography.label.fontWeight,
+    color: colors.status.open.text,
+  },
+  separator: {
+    height: spacing.sm,
+  },
 });
