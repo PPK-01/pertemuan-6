@@ -1,39 +1,28 @@
-import { router, Stack } from 'expo-router';
+import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { STATUS_LABEL } from '@/components/session/statusLabel';
-import { Button } from '@/components/ui/Button';
-import { Chip } from '@/components/ui/Chip';
+import { AppBar } from '@/components/ui/AppBar';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { IdentityCard } from '@/components/ui/IdentityCard';
+import { PRESSED_OPACITY } from '@/components/ui/pressable';
 import { Screen } from '@/components/ui/Screen';
+import { Tile } from '@/components/ui/Tile';
 import { SessionListItem } from '@/features/asisten/SessionListItem';
-import { useAppStore, useSessionsForUser } from '@/store/appStore';
+import { useAppStore, useCurrentUser, useSessionsForUser } from '@/store/appStore';
 import { colors } from '@/theme/colors';
-import { spacing } from '@/theme/spacing';
+import { layout, radius, spacing } from '@/theme/spacing';
 import { typography } from '@/theme/typography';
-import { SESSION_STATUS_LIST } from '@/types';
-import type { SessionStatus } from '@/types';
+import type { Session, SessionStatus } from '@/types';
 
 type StatusFilter = SessionStatus | 'all';
 
-type StatusFilterBarProps = {
-  value: StatusFilter;
-  onChange: (value: StatusFilter) => void;
-};
-
-function StatusFilterBar({ value, onChange }: StatusFilterBarProps) {
+function PlusIcon() {
   return (
-    <View role="radiogroup" aria-label="Filter status" style={styles.filterBar}>
-      <Chip label="Semua" selected={value === 'all'} onPress={() => onChange('all')} />
-      {SESSION_STATUS_LIST.map((status) => (
-        <Chip
-          key={status}
-          label={STATUS_LABEL[status]}
-          selected={value === status}
-          onPress={() => onChange(status)}
-        />
-      ))}
+    <View style={styles.plusBox}>
+      <View style={styles.plusHorizontal} />
+      <View style={styles.plusVertical} />
     </View>
   );
 }
@@ -42,72 +31,201 @@ function ListSeparator() {
   return <View style={styles.separator} />;
 }
 
-export default function AsistenSessionListScreen() {
+export default function AsistenHomeScreen() {
+  const insets = useSafeAreaInsets();
+  const currentUser = useCurrentUser();
   const currentUserId = useAppStore((state) => state.currentUserId);
-  const currentUser = useAppStore((state) =>
-    state.users.find((user) => user.id === state.currentUserId),
-  );
   const resetIdentity = useAppStore((state) => state.resetIdentity);
-  // Guard di asisten/_layout.tsx menjamin currentUserId terisi.
   const sessions = useSessionsForUser(currentUserId ?? '');
+
   const [filter, setFilter] = useState<StatusFilter>('all');
 
-  const visibleSessions = useMemo(
-    () => (filter === 'all' ? sessions : sessions.filter((session) => session.status === filter)),
+  const counts = useMemo<Record<StatusFilter, number>>(() => {
+    const acc: Record<StatusFilter, number> = {
+      all: sessions.length,
+      scheduled: 0,
+      open: 0,
+      closed: 0,
+    };
+    for (const session of sessions) {
+      acc[session.status] = (acc[session.status] ?? 0) + 1;
+    }
+    return acc;
+  }, [sessions]);
+
+  const filteredSessions = useMemo(
+    () => (filter === 'all' ? sessions : sessions.filter((s) => s.status === filter)),
     [sessions, filter],
   );
 
   const openCreate = () => router.push('/asisten/buat');
 
   return (
-    <Screen scroll={false}>
-      <Stack.Screen
-        options={{
-          title: 'Sesi Praktikum',
-          // Hanya mengosongkan identitas; navigasi ke / ditangani guard di asisten/_layout.tsx.
-          headerRight: () => (
-            <Button label="Ganti peran" variant="ghost" onPress={resetIdentity} />
-          ),
-        }}
-      />
-      <FlatList
-        data={visibleSessions}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <SessionListItem session={item} />}
-        ItemSeparatorComponent={ListSeparator}
-        ListHeaderComponent={
-          <View style={styles.headerContent}>
-            {currentUser ? (
-              <Text style={styles.identity}>Masuk sebagai {currentUser.name}</Text>
-            ) : null}
-            <Button label="Buat sesi" onPress={openCreate} />
-            <StatusFilterBar value={filter} onChange={setFilter} />
+    <View style={styles.container}>
+      <AppBar subtitle="Sesi" />
+
+      <Screen scroll={false} edges={['left', 'right']}>
+        <View style={styles.screenInner}>
+          <FlatList
+            data={filteredSessions}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => <SessionListItem session={item} />}
+            ItemSeparatorComponent={ListSeparator}
+            contentContainerStyle={styles.listContent}
+            ListHeaderComponent={
+              <View style={styles.headerBlock}>
+                {currentUser ? (
+                  <IdentityCard
+                    name={currentUser.name}
+                    keyInfo="Asisten Lab"
+                    supportingInfo="Laboratorium Komputer"
+                    onGantiPeran={resetIdentity}
+                  />
+                ) : null}
+
+                <View
+                  role="radiogroup"
+                  aria-label="Filter status sesi"
+                  style={styles.tilesGrid}
+                >
+                  <Tile
+                    label="Semua"
+                    count={counts.all}
+                    iconType="all"
+                    selected={filter === 'all'}
+                    onPress={() => setFilter('all')}
+                  />
+                  <Tile
+                    label="Dijadwalkan"
+                    count={counts.scheduled}
+                    iconType="scheduled"
+                    selected={filter === 'scheduled'}
+                    onPress={() => setFilter('scheduled')}
+                  />
+                  <Tile
+                    label="Dibuka"
+                    count={counts.open}
+                    iconType="open"
+                    selected={filter === 'open'}
+                    onPress={() => setFilter('open')}
+                  />
+                  <Tile
+                    label="Ditutup"
+                    count={counts.closed}
+                    iconType="closed"
+                    selected={filter === 'closed'}
+                    onPress={() => setFilter('closed')}
+                  />
+                </View>
+              </View>
+            }
+            ListEmptyComponent={
+              <EmptyState
+                title="Belum ada sesi"
+                message="Buat sesi untuk membuka presensi."
+                action={{ label: 'Buat sesi', onPress: openCreate }}
+              />
+            }
+          />
+        </View>
+      </Screen>
+
+      {/* Bar bawah polos dengan tombol bulat tengah "Buat sesi" */}
+      <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, spacing.xs) }]}>
+        <Pressable
+          onPress={openCreate}
+          role="button"
+          aria-label="Buat sesi"
+          style={({ pressed }) => [
+            styles.centerButtonWrapper,
+            pressed && { opacity: PRESSED_OPACITY },
+          ]}
+        >
+          <View style={styles.centerButtonCircle}>
+            <PlusIcon />
           </View>
-        }
-        ListHeaderComponentStyle={styles.header}
-        ListEmptyComponent={
-          sessions.length === 0 || filter === 'all' ? (
-            <EmptyState
-              title="Belum ada sesi"
-              message="Sesi yang dibuat akan muncul di sini."
-              action={{ label: 'Buat sesi', onPress: openCreate }}
-            />
-          ) : (
-            <EmptyState
-              title={`Tidak ada sesi yang ${STATUS_LABEL[filter].toLowerCase()}`}
-              action={{ label: 'Tampilkan semua', onPress: () => setFilter('all') }}
-            />
-          )
-        }
-      />
-    </Screen>
+          <Text style={styles.centerButtonLabel}>Buat sesi</Text>
+        </Pressable>
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  header: { marginBottom: spacing.xl },
-  headerContent: { gap: spacing.md },
-  identity: { ...typography.label, color: colors.textMuted },
-  filterBar: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-  separator: { height: spacing.md },
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  screenInner: {
+    flex: 1,
+  },
+  listContent: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.xxl + 40,
+  },
+  headerBlock: {
+    gap: spacing.lg,
+    marginBottom: spacing.lg,
+  },
+  tilesGrid: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  separator: {
+    height: spacing.sm,
+  },
+  bottomBar: {
+    backgroundColor: colors.surface,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: spacing.xs,
+  },
+  centerButtonWrapper: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: -24,
+    minHeight: layout.minTouch,
+    minWidth: layout.minTouch,
+  },
+  centerButtonCircle: {
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    backgroundColor: colors.primary,
+    borderWidth: 3.5,
+    borderColor: colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  centerButtonLabel: {
+    fontSize: typography.caption.fontSize,
+    lineHeight: 14,
+    fontWeight: '600',
+    color: colors.primary,
+    marginTop: 2,
+  },
+  plusBox: {
+    width: 20,
+    height: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  plusHorizontal: {
+    position: 'absolute',
+    width: 14,
+    height: 2.5,
+    backgroundColor: colors.accent,
+    borderRadius: 1,
+  },
+  plusVertical: {
+    position: 'absolute',
+    width: 2.5,
+    height: 14,
+    backgroundColor: colors.accent,
+    borderRadius: 1,
+  },
 });
