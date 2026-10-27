@@ -1,9 +1,7 @@
 import { Redirect, Stack } from 'expo-router';
 
-import { GantiPeranButton } from '@/features/praktikan/GantiPeranButton';
 import { useAppStore } from '@/store/appStore';
 import { colors } from '@/theme/colors';
-import { typography } from '@/theme/typography';
 
 export const unstable_settings = {
   initialRouteName: '(tabs)',
@@ -20,20 +18,12 @@ export default function PraktikanLayout() {
   return (
     <Stack
       screenOptions={{
-        headerStyle: { backgroundColor: colors.surface },
-        headerTintColor: colors.primary,
-        headerTitleStyle: {
-          fontSize: typography.heading.fontSize,
-          fontWeight: typography.heading.fontWeight,
-          color: colors.text,
-        },
-        headerShadowVisible: false,
-        headerRight: () => <GantiPeranButton />,
+        headerShown: false,
         contentStyle: { backgroundColor: colors.background },
       }}
     >
-      <Stack.Screen name="(tabs)" options={{ headerShown: false, title: 'Jadwal' }} />
-      <Stack.Screen name="sesi/[id]" options={{ title: 'Detail sesi' }} />
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen name="sesi/[id]" options={{ headerShown: false }} />
     </Stack>
   );
 }
