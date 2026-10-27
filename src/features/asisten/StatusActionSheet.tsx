@@ -28,7 +28,7 @@ export function StatusActionSheet({
     <BottomSheet
       visible={visible}
       onClose={onClose}
-      title={isOpen ? 'Buka sesi?' : 'Tutup sesi?'}
+      title={isOpen ? 'Buka sesi' : 'Tutup sesi'}
       primaryAction={{
         label: isOpen ? 'Buka sesi' : 'Tutup sesi',
         variant: isOpen ? 'primary' : 'danger',
@@ -39,7 +39,7 @@ export function StatusActionSheet({
       <Text style={styles.body}>
         {isOpen
           ? `Setelah dibuka, praktikan kelas ${kelas} bisa presensi memakai kode sesi.`
-          : 'Setelah ditutup, praktikan tidak bisa presensi lagi dan sesi tidak bisa dibuka kembali.'}
+          : 'Praktikan tidak bisa presensi lagi setelah sesi ditutup.'}
       </Text>
     </BottomSheet>
   );
