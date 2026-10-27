@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Keyboard, StyleSheet, Text, View } from 'react-native';
 
 import { SessionInfo } from '@/components/session/SessionInfo';
+import { AppBar } from '@/components/ui/AppBar';
 import { Banner } from '@/components/ui/Banner';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { Button } from '@/components/ui/Button';
@@ -16,7 +17,7 @@ import { useAppStore, useAttendanceByUser, useCurrentUser, useSessionById } from
 import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
 import { typography } from '@/theme/typography';
-import { formatDateTime } from '@/utils/time';
+import { formatDateTime, formatTime } from '@/utils/time';
 
 type SheetStep = 'confirm' | 'success' | null;
 
@@ -39,63 +40,66 @@ export default function DetailSesiScreen() {
 
   if (!currentUser) {
     return (
-      <Screen>
-        <EmptyState
-          title="Identitas tidak ditemukan"
-          message="Kembali ke halaman awal untuk memilih peran dan identitas."
-          action={{ label: 'Ke halaman awal', onPress: () => router.replace('/') }}
-        />
-      </Screen>
+      <View style={styles.container}>
+        <AppBar subtitle="Detail sesi" canGoBack onGoBack={() => router.back()} />
+        <Screen edges={['left', 'right', 'bottom']}>
+          <EmptyState
+            title="Identitas tidak ditemukan"
+            message="Kembali ke halaman awal untuk memilih peran dan identitas."
+          />
+        </Screen>
+      </View>
     );
   }
 
   if (!session) {
     return (
-      <Screen>
-        <EmptyState
-          title="Sesi tidak ditemukan"
-          message="Sesi ini mungkin sudah tidak tersedia."
-          action={{
-            label: 'Kembali ke jadwal',
-            onPress: () => router.replace('/praktikan/jadwal'),
-          }}
-        />
-      </Screen>
+      <View style={styles.container}>
+        <AppBar subtitle="Detail sesi" canGoBack onGoBack={() => router.back()} />
+        <Screen edges={['left', 'right', 'bottom']}>
+          <EmptyState
+            title="Sesi tidak ditemukan"
+            message="Sesi yang kamu cari tidak terdaftar."
+            action={{ label: 'Lihat jadwal', onPress: () => router.back() }}
+          />
+        </Screen>
+      </View>
     );
   }
 
-  if (session.kelas !== currentUser.kelas) {
+  const isClassMismatch = currentUser.kelas !== session.kelas;
+  if (isClassMismatch) {
     return (
-      <Screen>
-        <EmptyState
-          title="Sesi tidak tersedia"
-          message={ATTEND_FAIL_MESSAGE.NOT_IN_CLASS}
-          action={{
-            label: 'Kembali ke jadwal',
-            onPress: () => router.replace('/praktikan/jadwal'),
-          }}
-        />
-      </Screen>
+      <View style={styles.container}>
+        <AppBar subtitle="Detail sesi" canGoBack onGoBack={() => router.back()} />
+        <Screen edges={['left', 'right', 'bottom']}>
+          <View style={styles.page}>
+            <Card>
+              <SessionInfo session={session} />
+            </Card>
+            <Banner tone="danger" message={ATTEND_FAIL_MESSAGE.NOT_IN_CLASS} />
+          </View>
+        </Screen>
+      </View>
     );
   }
-
-  const activeUserId = currentUser.id;
 
   function handleChangeCode(nextCode: string) {
     setCode(nextCode);
-    setCodeError(undefined);
-    setBannerMessage(undefined);
+    if (codeError) setCodeError(undefined);
+    if (bannerMessage) setBannerMessage(undefined);
   }
 
   function handleOpenConfirm() {
+    if (code.length !== 4) return;
     Keyboard.dismiss();
-    setCodeError(undefined);
-    setBannerMessage(undefined);
     setSheet('confirm');
   }
 
   function handleConfirm() {
-    const result = submitAttendance(sessionId, activeUserId, code);
+    if (!currentUser || !session) return;
+    const result = submitAttendance(session.id, currentUser.id, code);
+
     if (result.ok) {
       setSuccessAt(result.attendance.timestamp);
       setCode('');
@@ -120,87 +124,117 @@ export default function DetailSesiScreen() {
   }
 
   return (
-    <Screen>
-      <View style={styles.page}>
-        <Card>
-          <SessionInfo session={session} />
-        </Card>
+    <View style={styles.container}>
+      <AppBar subtitle="Detail sesi" canGoBack onGoBack={() => router.back()} />
 
-        {!attendance && bannerMessage ? (
-          <Banner tone="danger" message={bannerMessage} />
-        ) : null}
+      <Screen edges={['left', 'right', 'bottom']}>
+        <View style={styles.page}>
+          <Card>
+            <SessionInfo session={session} />
+          </Card>
 
-        {attendance ? (
-          <View style={styles.attendanceBlock}>
-            <Banner
-              tone="success"
-              title="Presensi tercatat"
-              message={`Kamu sudah presensi pada sesi ini. Kehadiran tercatat pada ${formatDateTime(
-                attendance.timestamp,
-              )}.`}
+          {!attendance && bannerMessage ? (
+            <Banner tone="danger" message={bannerMessage} />
+          ) : null}
+
+          {attendance ? (
+            <View style={styles.attendanceBlock}>
+              <Banner
+                tone="success"
+                title="Presensi tercatat"
+                message={`Kamu sudah presensi pada sesi ini. Kehadiran tercatat pada ${formatDateTime(
+                  attendance.timestamp,
+                )}.`}
+              />
+              <Button
+                label={`Sudah presensi pukul ${formatTime(attendance.timestamp)}`}
+                onPress={() => undefined}
+                disabled
+              />
+            </View>
+          ) : session.status === 'open' ? (
+            <PresensiForm
+              code={code}
+              onChangeCode={handleChangeCode}
+              onSubmit={handleOpenConfirm}
+              error={codeError}
             />
-            <Button label="Sudah presensi" onPress={() => undefined} disabled />
-          </View>
-        ) : session.status === 'open' ? (
-          <PresensiForm
-            code={code}
-            onChangeCode={handleChangeCode}
-            onSubmit={handleOpenConfirm}
-            error={codeError}
-          />
-        ) : session.status === 'closed' ? (
-          <Banner
-            tone="info"
-            title="Sesi sudah ditutup"
-            message={ATTEND_FAIL_MESSAGE.SESSION_NOT_OPEN}
-          />
-        ) : (
-          <Banner
-            tone="info"
-            title="Sesi belum dibuka"
-            message={ATTEND_FAIL_MESSAGE.SESSION_NOT_OPEN}
-          />
-        )}
-      </View>
-
-      <PresensiSheet
-        visible={sheet === 'confirm'}
-        session={session}
-        code={code}
-        onClose={() => setSheet(null)}
-        onConfirm={handleConfirm}
-      />
-
-      <BottomSheet
-        visible={sheet === 'success'}
-        onClose={handleCloseSuccess}
-        title="Presensi berhasil"
-        primaryAction={{ label: 'Selesai', onPress: handleCloseSuccess }}
-      >
-        <View style={styles.success}>
-          <Banner tone="success" message="Kehadiranmu sudah tercatat pada sesi ini." />
-          <View style={styles.successRow}>
-            <Text style={styles.successLabel}>Waktu presensi</Text>
-            <Text style={styles.successValue}>
-              {successAt ? formatDateTime(successAt) : '-'}
-            </Text>
-          </View>
+          ) : session.status === 'closed' ? (
+            <View style={styles.attendanceBlock}>
+              <Banner
+                tone="info"
+                title="Sesi sudah ditutup"
+                message={ATTEND_FAIL_MESSAGE.SESSION_NOT_OPEN}
+              />
+              <Button label="Sesi ditutup" onPress={() => undefined} disabled />
+            </View>
+          ) : (
+            <View style={styles.attendanceBlock}>
+              <Banner
+                tone="info"
+                title="Sesi belum dibuka"
+                message={ATTEND_FAIL_MESSAGE.SESSION_NOT_OPEN}
+              />
+              <Button label="Sesi belum dibuka" onPress={() => undefined} disabled />
+            </View>
+          )}
         </View>
-      </BottomSheet>
-    </Screen>
+
+        <PresensiSheet
+          visible={sheet === 'confirm'}
+          session={session}
+          code={code}
+          onClose={() => setSheet(null)}
+          onConfirm={handleConfirm}
+        />
+
+        <BottomSheet
+          visible={sheet === 'success'}
+          onClose={handleCloseSuccess}
+          title="Presensi berhasil"
+          primaryAction={{ label: 'Selesai', onPress: handleCloseSuccess }}
+        >
+          <View style={styles.success}>
+            <Banner tone="success" message="Kehadiranmu sudah tercatat pada sesi ini." />
+            <View style={styles.successRow}>
+              <Text style={styles.successLabel}>Waktu presensi</Text>
+              <Text style={styles.successValue}>
+                {successAt ? formatDateTime(successAt) : '-'}
+              </Text>
+            </View>
+          </View>
+        </BottomSheet>
+      </Screen>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  page: { gap: spacing.lg },
-  attendanceBlock: { gap: spacing.md },
-  success: { gap: spacing.md },
-  successRow: { gap: spacing.xs },
-  successLabel: { ...typography.label, color: colors.textMuted },
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  page: {
+    gap: spacing.lg,
+    paddingVertical: spacing.md,
+  },
+  attendanceBlock: {
+    gap: spacing.md,
+  },
+  success: {
+    gap: spacing.md,
+  },
+  successRow: {
+    gap: spacing.xs,
+  },
+  successLabel: {
+    ...typography.label,
+    color: colors.textMuted,
+  },
   successValue: {
-    ...typography.body,
-    fontWeight: typography.label.fontWeight,
-    color: colors.text,
+    fontSize: 20,
+    fontWeight: '700',
+    color: colors.primary,
     fontVariant: ['tabular-nums'],
   },
 });
