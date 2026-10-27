@@ -18,7 +18,14 @@ export function Banner({ tone, message, title, style }: BannerProps) {
   const { bg, text } = colors.feedback[tone];
 
   return (
-    <View aria-live="polite" style={[styles.container, { backgroundColor: bg }, style]}>
+    <View
+      aria-live="polite"
+      style={[
+        styles.container,
+        { backgroundColor: bg, borderColor: text },
+        style,
+      ]}
+    >
       {title ? <Text style={[styles.title, { color: text }]}>{title}</Text> : null}
       <Text style={[styles.message, { color: text }]}>{message}</Text>
     </View>
@@ -28,8 +35,9 @@ export function Banner({ tone, message, title, style }: BannerProps) {
 const styles = StyleSheet.create({
   container: {
     borderRadius: radius.md,
-    padding: spacing.lg,
-    gap: spacing.sm,
+    borderWidth: 1,
+    padding: spacing.md,
+    gap: spacing.xs,
   },
   title: typography.label,
   message: typography.body,
