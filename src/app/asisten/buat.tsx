@@ -1,9 +1,12 @@
-import { router, Stack } from 'expo-router';
+import { router } from 'expo-router';
 import { useRef, useState } from 'react';
+import { StyleSheet, View } from 'react-native';
 
+import { AppBar } from '@/components/ui/AppBar';
 import { Screen } from '@/components/ui/Screen';
 import { SessionForm } from '@/features/asisten/SessionForm';
 import { useAppStore } from '@/store/appStore';
+import { spacing } from '@/theme/spacing';
 import type { CreateSessionInput } from '@/types';
 
 export default function AsistenBuatSesiScreen() {
@@ -24,9 +27,26 @@ export default function AsistenBuatSesiScreen() {
   }
 
   return (
-    <Screen>
-      <Stack.Screen options={{ title: 'Buat sesi' }} />
-      <SessionForm onSubmit={handleSubmit} submitting={submitting} />
-    </Screen>
+    <View style={styles.container}>
+      <AppBar
+        subtitle="Buat sesi"
+        canGoBack
+        onGoBack={() => router.back()}
+      />
+      <Screen edges={['left', 'right', 'bottom']}>
+        <View style={styles.content}>
+          <SessionForm onSubmit={handleSubmit} submitting={submitting} />
+        </View>
+      </Screen>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  content: {
+    paddingVertical: spacing.md,
+  },
+});
