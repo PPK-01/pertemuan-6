@@ -1,24 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 840 260" width="100%" height="260" fill="none">
   <defs>
     <style>
-      @keyframes cellBlink {
-        0%, 100% { border-color: #385185; box-shadow: 0 0 0 0 rgba(255,196,0,0); }
-        50% { border-color: #FFC400; }
-      }
-      @keyframes tokenPulse {
-        0%, 100% { transform: scale(1); opacity: 0.95; }
-        50% { transform: scale(1.04); opacity: 1; filter: drop-shadow(0 0 6px rgba(255,196,0,0.6)); }
-      }
-      @keyframes liveGlow {
-        0%, 100% { opacity: 0.4; transform: scale(0.9); }
-        50% { opacity: 1; transform: scale(1.15); }
-      }
-      @keyframes floatShimmer {
-        0% { transform: translateX(-120px); opacity: 0; }
-        30% { opacity: 0.35; }
-        70% { opacity: 0.35; }
-        100% { transform: translateX(540px); opacity: 0; }
-      }
       .bg-card { fill: #00144A; stroke: #233B6E; stroke-width: 1.5; rx: 16px; }
       .header-strip { fill: #001C66; rx: 14px; }
       .header-accent { fill: #FFC400; }
@@ -30,18 +12,8 @@
       .cell-box-accent { stroke: #FFC400; stroke-width: 2; fill: #091C4B; }
       .cell-num { font-family: 'SF Mono', Monaco, Menlo, Consolas, monospace; font-weight: 700; font-size: 28px; fill: #FFFFFF; text-anchor: middle; dominant-baseline: central; }
       .cell-num-accent { fill: #FFC400; }
-      .live-dot { fill: #22C55E; transform-origin: 756px 44px; animation: liveGlow 2.2s infinite ease-in-out; }
-      .token-group { transform-origin: 640px 145px; animation: tokenPulse 3s infinite ease-in-out; }
-      .shimmer-bar { fill: url(#shimmer-grad); animation: floatShimmer 4s infinite linear; }
-      @media (prefers-reduced-motion: reduce) {
-        .live-dot, .token-group, .shimmer-bar { animation: none !important; }
-      }
+      .token-group { transform-origin: 640px 145px; }
     </style>
-    <linearGradient id="shimmer-grad" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#FFC400" stop-opacity="0" />
-      <stop offset="50%" stop-color="#FFC400" stop-opacity="0.35" />
-      <stop offset="100%" stop-color="#FFC400" stop-opacity="0" />
-    </linearGradient>
     <clipPath id="card-clip">
       <rect x="10" y="10" width="820" height="240" rx="16" />
     </clipPath>
@@ -58,34 +30,26 @@
     <rect x="18" y="18" width="804" height="42" class="header-strip" />
     <rect x="18" y="18" width="6" height="42" class="header-accent" />
     <text x="36" y="44" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="700" font-size="12px" fill="#D3DEEE" letter-spacing="1.5px">KARTU PRESENSI PRAKTIKUM DIGITAL</text>
-    
-    <!-- Live Status Pill on Header -->
-    <rect x="684" y="28" width="126" height="24" rx="12" fill="#031E54" stroke="#234685" stroke-width="1" />
-    <circle cx="700" cy="40" r="4.5" class="live-dot" />
-    <text x="712" y="44" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="600" font-size="10.5px" fill="#4ADE80" letter-spacing="0.5px">SESI DIBUKA</text>
-
-    <!-- Shimmer Bar across Header -->
-    <rect x="18" y="58" width="160" height="2" class="shimmer-bar" />
 
     <!-- Left Brand Section -->
     <g transform="translate(36, 102)">
       <!-- Role Badge -->
       <rect x="0" y="0" width="156" height="24" class="pill-badge" />
-      <text x="12" y="16" class="badge-text">Expo SDK 57 • Offline</text>
+      <text x="12" y="16" class="badge-text">Expo SDK 57 • OFFLINE</text>
       
       <!-- Brand Name -->
       <text x="0" y="60" class="brand-title">RAWUH</text>
       
-      <!-- Accent Tag -->
-      <rect x="176" y="24" width="60" height="22" rx="4" fill="#FFC400" />
-      <text x="186" y="39" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="800" font-size="11px" fill="#00144A" letter-spacing="0.8px">V1.0</text>
+      <!-- Accent Tag (Sejajar di sebelah kanan dan sejajar bagian bawah tulisan RAWUH) -->
+      <rect x="174" y="38" width="54" height="22" rx="4" fill="#FFC400" />
+      <text x="182" y="53" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="800" font-size="11px" fill="#00144A" letter-spacing="0.8px">V1.0</text>
       
       <!-- Subtitle Description -->
       <text x="0" y="88" class="brand-sub">Sistem presensi praktikum presisi dengan validasi token 4-digit</text>
       <text x="0" y="108" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="400" font-size="12px" fill="#5E759B">Offline-first • Zero-shadow Card UI • Aksesibilitas WCAG AA (4.5:1)</text>
     </g>
 
-    <!-- Right Interactive Token Code Cells -->
+    <!-- Right Interactive Token Code Cells (Static, no pulse) -->
     <g class="token-group">
       <!-- Section Tag -->
       <text x="518" y="105" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="600" font-size="11px" fill="#8A9BB8" letter-spacing="1px">TOKEN AKTIF</text>
