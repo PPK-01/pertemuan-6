@@ -57,38 +57,60 @@ export function Button({
         style,
       ]}
     >
-      {loading && <ActivityIndicator size="small" color={color} />}
+      {loading ? (
+        <ActivityIndicator
+          size="small"
+          color={color}
+          style={styles.spinner}
+          accessibilityLabel="Memuat"
+        />
+      ) : null}
       <Text style={[styles.label, { color }]}>{label}</Text>
     </Pressable>
   );
 }
 
-// Semua varian ber-border 1 agar tinggi seragam di skala font berapa pun;
-// warna border = warna latar varian, kecuali secondary (lihat di bawah).
 const styles = StyleSheet.create({
   base: {
     minHeight: layout.minTouch,
-    borderWidth: 1,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
+    minWidth: layout.minTouch,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.sm,
+    borderWidth: 1,
+    borderColor: 'transparent',
   },
-  primary: { backgroundColor: colors.primary, borderColor: colors.primary },
-  // Pengecualian: border = surface membuat batas tombol hilang di atas Card/BottomSheet.
-  secondary: { backgroundColor: colors.surface, borderColor: colors.borderStrong },
+  primary: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  secondary: {
+    backgroundColor: colors.surface,
+    borderColor: colors.borderStrong,
+  },
   danger: {
     backgroundColor: colors.feedback.danger.bg,
-    borderColor: colors.feedback.danger.bg,
+    borderColor: colors.feedback.danger.text,
   },
-  ghost: { backgroundColor: 'transparent', borderColor: 'transparent' },
+  ghost: {
+    backgroundColor: 'transparent',
+    borderColor: 'transparent',
+  },
   disabled: {
     backgroundColor: colors.disabled.bg,
     borderColor: colors.disabled.bg,
   },
-  pressed: { opacity: PRESSED_OPACITY },
-  label: { ...typography.label, textAlign: 'center', flexShrink: 1 },
+  pressed: {
+    opacity: PRESSED_OPACITY,
+  },
+  label: {
+    ...typography.label,
+    textAlign: 'center',
+  },
+  spinner: {
+    marginRight: spacing.sm,
+  },
 });
