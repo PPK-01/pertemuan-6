@@ -1,8 +1,10 @@
-import { router, Stack, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
+import { CodeDisplay } from '@/components/session/CodeDisplay';
 import { SessionInfo } from '@/components/session/SessionInfo';
+import { AppBar } from '@/components/ui/AppBar';
 import { Banner } from '@/components/ui/Banner';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -19,8 +21,8 @@ import { typography } from '@/theme/typography';
 type Feedback = { tone: 'success' | 'danger'; message: string };
 
 const SUCCESS_MESSAGE: Record<StatusAction, string> = {
-  open: 'Sesi dibuka. Bagikan kode sesi ke praktikan.',
-  close: 'Sesi ditutup.',
+  open: 'Sesi dibuka',
+  close: 'Sesi ditutup',
 };
 
 export default function AsistenDetailSesiScreen() {
@@ -33,112 +35,113 @@ export default function AsistenDetailSesiScreen() {
   const closeSession = useAppStore((state) => state.closeSession);
 
   const [sheetVisible, setSheetVisible] = useState(false);
-  // Terpisah dari sheetVisible agar isi sheet tidak berganti selama animasi tutup.
   const [sheetAction, setSheetAction] = useState<StatusAction>('open');
   const [feedback, setFeedback] = useState<Feedback | null>(null);
 
   if (!session) {
     return (
-      <Screen>
-        <Stack.Screen options={{ title: 'Detail sesi' }} />
-        <EmptyState
-          title="Sesi tidak ditemukan"
-          message="Sesi mungkin sudah tidak tersedia."
-          action={{ label: 'Kembali ke daftar', onPress: () => router.replace('/asisten') }}
-        />
-      </Screen>
+      <View style={styles.container}>
+        <AppBar subtitle="Detail sesi" canGoBack onGoBack={() => router.back()} />
+        <Screen edges={['left', 'right', 'bottom']}>
+          <EmptyState
+            title="Sesi tidak ditemukan"
+            message="Sesi mungkin sudah dihapus atau tautan tidak valid."
+            action={{ label: 'Kembali ke daftar sesi', onPress: () => router.back() }}
+          />
+        </Screen>
+      </View>
     );
   }
 
-  function showSheet(action: StatusAction) {
+  const showSheet = (action: StatusAction) => {
     setSheetAction(action);
     setSheetVisible(true);
-  }
+  };
 
-  function handleConfirm() {
-    const ok = sheetAction === 'open' ? openSession(sessionId) : closeSession(sessionId);
+  const handleConfirm = () => {
     setSheetVisible(false);
-    setFeedback(
-      ok
-        ? { tone: 'success', message: SUCCESS_MESSAGE[sheetAction] }
-        : {
-            tone: 'danger',
-            message: 'Status sesi sudah berubah. Periksa status terbaru di atas.',
-          },
-    );
-  }
+    const actionFn = sheetAction === 'open' ? openSession : closeSession;
+    const ok = actionFn(session.id);
+    if (ok) {
+      setFeedback({ tone: 'success', message: SUCCESS_MESSAGE[sheetAction] });
+    } else {
+      setFeedback({
+        tone: 'danger',
+        message:
+          sheetAction === 'open'
+            ? 'Gagal membuka sesi. Sesi mungkin sudah dibuka atau ditutup.'
+            : 'Gagal menutup sesi. Hanya sesi yang sedang dibuka yang bisa ditutup.',
+      });
+    }
+  };
 
   return (
-    <Screen>
-      <Stack.Screen options={{ title: 'Detail sesi' }} />
-      <View style={styles.page}>
-        {feedback ? <Banner tone={feedback.tone} message={feedback.message} /> : null}
+    <View style={styles.container}>
+      <AppBar subtitle="Detail sesi" canGoBack onGoBack={() => router.back()} />
+      <Screen edges={['left', 'right', 'bottom']}>
+        <View style={styles.page}>
+          {feedback ? <Banner tone={feedback.tone} message={feedback.message} /> : null}
 
-        <Card>
-          <SessionInfo session={session} />
-        </Card>
-
-        {session.status === 'open' ? (
           <Card>
-            <View style={styles.code}>
-              <Text style={styles.codeLabel}>Kode sesi</Text>
-              {/* Digit dipisah spasi agar TalkBack membacanya per digit, bukan sebagai bilangan. */}
-              <Text
-                aria-label={`Kode sesi ${session.code.split('').join(' ')}`}
-                style={styles.codeValue}
-              >
-                {session.code}
-              </Text>
-              <Text style={styles.codeHint}>
-                {`Bagikan kode ini ke praktikan kelas ${session.kelas}.`}
-              </Text>
-            </View>
+            <SessionInfo session={session} />
           </Card>
-        ) : null}
 
-        {session.status === 'scheduled' ? (
-          <Button label="Buka sesi" onPress={() => showSheet('open')} />
-        ) : session.status === 'open' ? (
-          <Button label="Tutup sesi" variant="danger" onPress={() => showSheet('close')} />
-        ) : feedback ? null : (
-          <Banner tone="info" message="Sesi sudah ditutup. Praktikan tidak bisa presensi lagi." />
-        )}
-
-        <View style={styles.section}>
-          <Text role="heading" style={styles.sectionTitle}>
-            Rekap kehadiran
-          </Text>
-          {session.status === 'scheduled' ? (
-            <Text style={styles.sectionHint}>Rekap muncul setelah sesi dibuka.</Text>
-          ) : rekap ? (
-            <RekapList rekap={rekap} />
+          {session.status === 'open' ? (
+            <CodeDisplay
+              code={session.code}
+              hint="Bagikan kode ini ke kelas."
+            />
           ) : null}
-        </View>
-      </View>
 
-      <StatusActionSheet
-        visible={sheetVisible}
-        action={sheetAction}
-        kelas={session.kelas}
-        onConfirm={handleConfirm}
-        onClose={() => setSheetVisible(false)}
-      />
-    </Screen>
+          {session.status === 'scheduled' ? (
+            <Button label="Buka sesi" onPress={() => showSheet('open')} />
+          ) : session.status === 'open' ? (
+            <Button label="Tutup sesi" variant="danger" onPress={() => showSheet('close')} />
+          ) : feedback ? null : (
+            <Banner tone="info" message="Sesi sudah ditutup." />
+          )}
+
+          <View style={styles.section}>
+            <Text role="heading" style={styles.sectionTitle}>
+              Rekap kehadiran
+            </Text>
+            {session.status === 'scheduled' ? (
+              <Text style={styles.sectionHint}>Rekap muncul setelah sesi dibuka.</Text>
+            ) : rekap ? (
+              <RekapList rekap={rekap} />
+            ) : null}
+          </View>
+
+          <StatusActionSheet
+            visible={sheetVisible}
+            action={sheetAction}
+            kelas={session.kelas}
+            onConfirm={handleConfirm}
+            onClose={() => setSheetVisible(false)}
+          />
+        </View>
+      </Screen>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  page: { gap: spacing.xl },
-  code: { gap: spacing.sm },
-  codeLabel: { ...typography.label, color: colors.textMuted },
-  codeValue: {
-    ...typography.display,
-    color: colors.text,
-    fontVariant: ['tabular-nums'],
-    letterSpacing: 4, // bukan token, jarak antar digit kode
+  container: {
+    flex: 1,
   },
-  codeHint: { ...typography.body, color: colors.textMuted },
-  section: { gap: spacing.md },
-  sectionTitle: { ...typography.heading, color: colors.text },
-  sectionHint: { ...typography.body, color: colors.textMuted },
+  page: {
+    gap: spacing.xl,
+    paddingVertical: spacing.md,
+  },
+  section: {
+    gap: spacing.sm,
+  },
+  sectionTitle: {
+    ...typography.heading,
+    color: colors.text,
+  },
+  sectionHint: {
+    ...typography.body,
+    color: colors.textMuted,
+  },
 });
