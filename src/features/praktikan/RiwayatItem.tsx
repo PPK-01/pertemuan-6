@@ -15,7 +15,7 @@ export type RiwayatItemProps = {
 
 export function RiwayatItem({ session, attendance }: RiwayatItemProps) {
   return (
-    <Card>
+    <View style={styles.card}>
       <View style={styles.content}>
         <View style={styles.header}>
           <View style={styles.headingGroup}>
@@ -40,7 +40,7 @@ export function RiwayatItem({ session, attendance }: RiwayatItemProps) {
           />
         </View>
       </View>
-    </Card>
+    </View>
   );
 }
 
@@ -62,6 +62,13 @@ function DetailRow({
 }
 
 const styles = StyleSheet.create({
+  card: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    padding: spacing.lg,
+  },
   content: { gap: spacing.sm },
   header: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm },
   headingGroup: { flex: 1, gap: spacing.xs },
