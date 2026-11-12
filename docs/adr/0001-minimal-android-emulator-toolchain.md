@@ -1,0 +1,3 @@
+# Minimal CLI Android Toolchain & Lightweight AVD for Apple Silicon
+
+Untuk pengujian aplikasi Expo SDK 57 (React Native 0.86) secara interaktif di macOS Apple Silicon tanpa beban instalasi penuh Android Studio GUI, tim memutuskan menggunakan toolchain Android minimal berbasis CLI (`android-commandlinetools`, `platforms;android-35`, `build-tools;35.0.0`) dengan AVD berprofil ringan (`pixel_4a`, RAM 1536MB, host GPU Metal acceleration, system image `arm64-v8a`). Keputusan ini menghemat penggunaan memori dan disk Mac (~3 GB total footprint dibanding >15 GB untuk full Android Studio), menjaga performa native hypervisor Apple Silicon, dan menyelaraskan dependensi compileSdk 35 bawaan Expo 57.

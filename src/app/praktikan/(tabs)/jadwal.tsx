@@ -11,12 +11,12 @@ import {
   useAppStore,
   useAttendanceByUser,
   useCurrentUser,
+  useIzinByUser,
   useSessionsForUser,
 } from '@/store/appStore';
 import { colors } from '@/theme/colors';
 import { radius, spacing } from '@/theme/spacing';
 import { typography } from '@/theme/typography';
-import type { Session } from '@/types';
 
 function ListSeparator() {
   return <View style={styles.separator} />;
@@ -25,19 +25,36 @@ function ListSeparator() {
 export default function JadwalScreen() {
   const currentUser = useCurrentUser();
   const userId = currentUser?.id ?? '';
-  const resetIdentity = useAppStore((state) => state.resetIdentity);
+  const logout = useAppStore((state) => state.logout);
   const sessions = useSessionsForUser(userId);
   const attendances = useAttendanceByUser(userId);
+  const izinList = useIzinByUser(userId);
 
   const attendedSessionIds = useMemo(
     () => new Set(attendances.map((a) => a.sessionId)),
     [attendances],
   );
 
-  const activeOpenSessions = useMemo(
-    () => sessions.filter((s) => s.status === 'open' && !attendedSessionIds.has(s.id)),
-    [sessions, attendedSessionIds],
+  const approvedIzinSessionIds = useMemo(
+    () => new Set(izinList.filter((i) => i.status === 'approved').map((i) => i.sessionId)),
+    [izinList],
   );
+
+  const activeOpenSessions = useMemo(
+    () =>
+      sessions.filter(
+        (s) =>
+          s.status === 'open' &&
+          !attendedSessionIds.has(s.id) &&
+          !approvedIzinSessionIds.has(s.id),
+      ),
+    [sessions, attendedSessionIds, approvedIzinSessionIds],
+  );
+
+  async function handleLogout() {
+    await logout();
+    router.replace('/(auth)/login');
+  }
 
   if (!currentUser) {
     return (
@@ -46,7 +63,8 @@ export default function JadwalScreen() {
         <Screen edges={['left', 'right', 'bottom']}>
           <EmptyState
             title="Identitas tidak ditemukan"
-            message="Kembali ke halaman awal untuk memilih peran dan identitas."
+            message="Silakan masuk kembali ke akun praktikan."
+            action={{ label: 'Masuk', onPress: () => router.replace('/(auth)/login') }}
           />
         </Screen>
       </View>
@@ -55,7 +73,7 @@ export default function JadwalScreen() {
 
   return (
     <View style={styles.container}>
-      <AppBar subtitle="Jadwal" />
+      <AppBar subtitle="Jadwal Praktikum" />
 
       <Screen scroll={false} edges={['left', 'right']}>
         <View style={styles.screenInner}>
@@ -64,7 +82,17 @@ export default function JadwalScreen() {
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => {
               const attended = attendedSessionIds.has(item.id);
-              const isOpen = item.status === 'open' && !attended;
+              const izinApproved = approvedIzinSessionIds.has(item.id);
+              const isOpen = item.status === 'open' && !attended && !izinApproved;
+
+              let footerText: string | undefined;
+              if (attended) {
+                footerText = 'Sudah presensi';
+              } else if (izinApproved) {
+                footerText = 'Izin disetujui';
+              } else if (isOpen) {
+                footerText = 'Sedang dibuka • Tekan untuk presensi';
+              }
 
               return (
                 <SessionRow
@@ -75,13 +103,7 @@ export default function JadwalScreen() {
                       params: { id: item.id },
                     })
                   }
-                  footerText={
-                    attended
-                      ? 'Sudah presensi'
-                      : isOpen
-                      ? 'Sedang dibuka • Tekan untuk presensi'
-                      : undefined
-                  }
+                  footerText={footerText}
                 />
               );
             }}
@@ -92,27 +114,28 @@ export default function JadwalScreen() {
                 <IdentityCard
                   name={currentUser.name}
                   keyInfo={currentUser.kelas ? `Kelas ${currentUser.kelas}` : 'Praktikan'}
-                  supportingInfo="Praktikan"
-                  onGantiPeran={resetIdentity}
+                  supportingInfo="Laboratorium Komputer"
+                  actionLabel="Keluar"
+                  onAction={handleLogout}
                 />
 
                 {/* Strip Sedang Dibuka */}
                 {activeOpenSessions.length > 0 ? (
                   <View style={styles.openStrip}>
-                    <View style={styles.activeDot} />
+                    <View style={styles.openStripDot} />
                     <Text style={styles.openStripText}>
-                      {activeOpenSessions.length === 1
-                        ? '1 sesi sedang dibuka untuk kelasmu'
-                        : `${activeOpenSessions.length} sesi sedang dibuka untuk kelasmu`}
+                      Ada {activeOpenSessions.length} sesi yang sedang dibuka untuk presensi.
                     </Text>
                   </View>
                 ) : null}
+
+                <Text style={styles.sectionTitle}>Semua Sesi Praktikum</Text>
               </View>
             }
             ListEmptyComponent={
               <EmptyState
-                title="Belum ada jadwal"
-                message="Jadwal praktikum akan tampil di sini."
+                title="Belum ada sesi"
+                message={`Belum ada sesi praktikum yang dijadwalkan untuk Kelas ${currentUser.kelas ?? ''}.`}
               />
             }
           />
@@ -131,38 +154,45 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   listContent: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.xxl + 40,
+    padding: spacing.lg,
+    paddingBottom: spacing.xxl * 2,
+    gap: spacing.sm,
   },
   headerBlock: {
     gap: spacing.md,
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
+  },
+  sectionTitle: {
+    ...typography.label,
+    color: colors.text,
+    fontSize: 16,
+    fontWeight: '700',
+    marginTop: spacing.sm,
+  },
+  separator: {
+    height: spacing.sm,
   },
   openStrip: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    backgroundColor: colors.status.open.bg,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    borderRadius: radius.md,
+    backgroundColor: '#DDF1E4',
+    borderColor: '#14603A',
     borderWidth: 1,
-    borderColor: 'rgba(20, 96, 58, 0.25)',
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
   },
-  activeDot: {
+  openStripDot: {
     width: 8,
     height: 8,
-    borderRadius: 4,
-    backgroundColor: colors.status.open.text,
+    borderRadius: radius.full,
+    backgroundColor: '#14603A',
   },
   openStripText: {
-    fontSize: typography.caption.fontSize,
-    lineHeight: typography.caption.lineHeight,
-    fontWeight: typography.label.fontWeight,
-    color: colors.status.open.text,
-  },
-  separator: {
-    height: spacing.sm,
+    ...typography.caption,
+    color: '#14603A',
+    fontWeight: '600',
+    flex: 1,
   },
 });

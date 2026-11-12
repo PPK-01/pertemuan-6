@@ -2,6 +2,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Keyboard, StyleSheet, Text, View } from 'react-native';
 
+import { IzinStatusBadge } from '@/components/izin/IzinStatusBadge';
 import { SessionInfo } from '@/components/session/SessionInfo';
 import { AppBar } from '@/components/ui/AppBar';
 import { Banner } from '@/components/ui/Banner';
@@ -13,9 +14,15 @@ import { Screen } from '@/components/ui/Screen';
 import { ATTEND_FAIL_MESSAGE } from '@/features/praktikan/attendMessages';
 import { PresensiForm } from '@/features/praktikan/PresensiForm';
 import { PresensiSheet } from '@/features/praktikan/PresensiSheet';
-import { useAppStore, useAttendanceByUser, useCurrentUser, useSessionById } from '@/store/appStore';
+import {
+  useAppStore,
+  useAttendanceByUser,
+  useCurrentUser,
+  useIzinByUser,
+  useSessionById,
+} from '@/store/appStore';
 import { colors } from '@/theme/colors';
-import { spacing } from '@/theme/spacing';
+import { radius, spacing } from '@/theme/spacing';
 import { typography } from '@/theme/typography';
 import { formatDateTime, formatTime } from '@/utils/time';
 
@@ -23,7 +30,7 @@ type SheetStep = 'confirm' | 'success' | null;
 
 export default function DetailSesiScreen() {
   const params = useLocalSearchParams<{ id?: string | string[] }>();
-  const sessionId = Array.isArray(params.id) ? (params.id[0] ?? '') : (params.id ?? '');
+  const sessionId = Array.isArray(params.id) ? params.id[0] ?? '' : params.id ?? '';
 
   const currentUser = useCurrentUser();
   const submitAttendance = useAppStore((state) => state.submitAttendance);
@@ -32,20 +39,25 @@ export default function DetailSesiScreen() {
   const attendances = useAttendanceByUser(currentUser?.id ?? '');
   const attendance = attendances.find((item) => item.sessionId === sessionId);
 
+  const izinList = useIzinByUser(currentUser?.id ?? '');
+  const existingIzin = izinList.find((item) => item.sessionId === sessionId);
+
   const [code, setCode] = useState('');
   const [codeError, setCodeError] = useState<string | undefined>();
   const [bannerMessage, setBannerMessage] = useState<string | undefined>();
   const [sheet, setSheet] = useState<SheetStep>(null);
   const [successAt, setSuccessAt] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   if (!currentUser) {
     return (
       <View style={styles.container}>
-        <AppBar subtitle="Detail sesi" canGoBack onGoBack={() => router.back()} />
+        <AppBar subtitle="Detail Sesi" canGoBack onGoBack={() => router.back()} />
         <Screen edges={['left', 'right', 'bottom']}>
           <EmptyState
             title="Identitas tidak ditemukan"
-            message="Kembali ke halaman awal untuk memilih peran dan identitas."
+            message="Silakan masuk kembali untuk melihat detail sesi."
+            action={{ label: 'Masuk', onPress: () => router.replace('/(auth)/login') }}
           />
         </Screen>
       </View>
@@ -55,7 +67,7 @@ export default function DetailSesiScreen() {
   if (!session) {
     return (
       <View style={styles.container}>
-        <AppBar subtitle="Detail sesi" canGoBack onGoBack={() => router.back()} />
+        <AppBar subtitle="Detail Sesi" canGoBack onGoBack={() => router.back()} />
         <Screen edges={['left', 'right', 'bottom']}>
           <EmptyState
             title="Sesi tidak ditemukan"
@@ -71,7 +83,7 @@ export default function DetailSesiScreen() {
   if (isClassMismatch) {
     return (
       <View style={styles.container}>
-        <AppBar subtitle="Detail sesi" canGoBack onGoBack={() => router.back()} />
+        <AppBar subtitle="Detail Sesi" canGoBack onGoBack={() => router.back()} />
         <Screen edges={['left', 'right', 'bottom']}>
           <View style={styles.page}>
             <Card>
@@ -96,9 +108,12 @@ export default function DetailSesiScreen() {
     setSheet('confirm');
   }
 
-  function handleConfirm() {
+  async function handleConfirm() {
     if (!currentUser || !session) return;
-    const result = submitAttendance(session.id, currentUser.id, code);
+
+    setSubmitting(true);
+    const result = await submitAttendance(session.id, code);
+    setSubmitting(false);
 
     if (result.ok) {
       setSuccessAt(result.attendance.timestamp);
@@ -125,7 +140,7 @@ export default function DetailSesiScreen() {
 
   return (
     <View style={styles.container}>
-      <AppBar subtitle="Detail sesi" canGoBack onGoBack={() => router.back()} />
+      <AppBar subtitle="Detail Sesi" canGoBack onGoBack={() => router.back()} />
 
       <Screen edges={['left', 'right', 'bottom']}>
         <View style={styles.page}>
@@ -137,6 +152,49 @@ export default function DetailSesiScreen() {
             <Banner tone="danger" message={bannerMessage} />
           ) : null}
 
+          {/* Skenario: Izin Disetujui (FR-28) */}
+          {existingIzin?.status === 'approved' ? (
+            <View style={styles.attendanceBlock}>
+              <Banner
+                tone="info"
+                title="Izin Disetujui"
+                message={ATTEND_FAIL_MESSAGE.IZIN_APPROVED}
+              />
+              <Button
+                label="Lihat Detail Izin"
+                variant="secondary"
+                onPress={() =>
+                  router.push({
+                    pathname: '/praktikan/izin/[id]',
+                    params: { id: existingIzin.id },
+                  })
+                }
+              />
+            </View>
+          ) : existingIzin ? (
+            /* Skenario: Izin Sedang Diproses */
+            <View style={styles.izinStatusCard}>
+              <View style={styles.izinHeaderRow}>
+                <Text style={styles.izinStatusTitle}>Pengajuan Izin Kamu</Text>
+                <IzinStatusBadge status={existingIzin.status} />
+              </View>
+              <Text style={styles.izinSnippet} numberOfLines={2}>
+                &ldquo;{existingIzin.alasan}&rdquo;
+              </Text>
+              <Button
+                label="Cek Status Izin"
+                variant="secondary"
+                onPress={() =>
+                  router.push({
+                    pathname: '/praktikan/izin/[id]',
+                    params: { id: existingIzin.id },
+                  })
+                }
+              />
+            </View>
+          ) : null}
+
+          {/* Presensi Section (Hanya bila belum presensi dan izin tidak approved) */}
           {attendance ? (
             <View style={styles.attendanceBlock}>
               <Banner
@@ -152,13 +210,32 @@ export default function DetailSesiScreen() {
                 disabled
               />
             </View>
-          ) : session.status === 'open' ? (
-            <PresensiForm
-              code={code}
-              onChangeCode={handleChangeCode}
-              onSubmit={handleOpenConfirm}
-              error={codeError}
-            />
+          ) : existingIzin?.status === 'approved' ? null : session.status === 'open' ? (
+            <View style={styles.formSection}>
+              <PresensiForm
+                code={code}
+                onChangeCode={handleChangeCode}
+                onSubmit={handleOpenConfirm}
+                error={codeError}
+              />
+
+              {/* Tombol Ajukan Izin jika belum ada izin (FR-21) */}
+              {!existingIzin ? (
+                <View style={styles.ajukanIzinBlock}>
+                  <Text style={styles.ajukanIzinPrompt}>Berhalangan hadir di laboratorium?</Text>
+                  <Button
+                    label="Ajukan Izin Ketidakhadiran"
+                    variant="secondary"
+                    onPress={() =>
+                      router.push({
+                        pathname: '/praktikan/izin/baru',
+                        params: { sessionId: session.id },
+                      })
+                    }
+                  />
+                </View>
+              ) : null}
+            </View>
           ) : session.status === 'closed' ? (
             <View style={styles.attendanceBlock}>
               <Banner
@@ -176,6 +253,23 @@ export default function DetailSesiScreen() {
                 message={ATTEND_FAIL_MESSAGE.SESSION_NOT_OPEN}
               />
               <Button label="Sesi belum dibuka" onPress={() => undefined} disabled />
+
+              {/* Boleh mengajukan izin pada sesi Dijadwalkan (FR-21) */}
+              {!existingIzin ? (
+                <View style={styles.ajukanIzinBlock}>
+                  <Text style={styles.ajukanIzinPrompt}>Sudah tahu akan berhalangan hadir?</Text>
+                  <Button
+                    label="Ajukan Izin Lebih Awal"
+                    variant="secondary"
+                    onPress={() =>
+                      router.push({
+                        pathname: '/praktikan/izin/baru',
+                        params: { sessionId: session.id },
+                      })
+                    }
+                  />
+                </View>
+              ) : null}
             </View>
           )}
         </View>
@@ -218,8 +312,45 @@ const styles = StyleSheet.create({
     gap: spacing.lg,
     paddingVertical: spacing.md,
   },
+  formSection: {
+    gap: spacing.lg,
+  },
   attendanceBlock: {
     gap: spacing.md,
+  },
+  ajukanIzinBlock: {
+    gap: spacing.xs,
+    paddingTop: spacing.xs,
+    alignItems: 'center',
+  },
+  ajukanIzinPrompt: {
+    ...typography.caption,
+    color: colors.textMuted,
+    marginBottom: spacing.xs,
+  },
+  izinStatusCard: {
+    backgroundColor: colors.surface,
+    borderColor: colors.border,
+    borderWidth: 1,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    gap: spacing.sm,
+  },
+  izinHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  izinStatusTitle: {
+    ...typography.label,
+    color: colors.primary,
+    fontWeight: '700',
+  },
+  izinSnippet: {
+    ...typography.body,
+    fontSize: 14,
+    color: colors.text,
+    fontStyle: 'italic',
   },
   success: {
     gap: spacing.md,

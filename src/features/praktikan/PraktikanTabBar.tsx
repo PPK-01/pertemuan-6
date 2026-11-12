@@ -1,13 +1,11 @@
-import type { Tabs } from 'expo-router';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import type { ComponentProps } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { PRESSED_OPACITY } from '@/components/ui/pressable';
-import { useAppStore, useSessionsForUser } from '@/store/appStore';
+import { useAppStore, useCurrentUser, useSessionsForUser } from '@/store/appStore';
 import { colors } from '@/theme/colors';
 import { layout, radius, spacing } from '@/theme/spacing';
 import { typography } from '@/theme/typography';
@@ -32,6 +30,17 @@ function CalendarIcon({ color }: { color: string }) {
           <View style={[styles.calendarDot, { backgroundColor: color }]} />
           <View style={[styles.calendarDot, { backgroundColor: color }]} />
         </View>
+      </View>
+    </View>
+  );
+}
+
+function DocumentIcon({ color }: { color: string }) {
+  return (
+    <View style={styles.iconFrame}>
+      <View style={[styles.docBody, { borderColor: color }]}>
+        <View style={[styles.docLine, { backgroundColor: color }]} />
+        <View style={[styles.docLineShort, { backgroundColor: color }]} />
       </View>
     </View>
   );
@@ -64,12 +73,11 @@ function KeyCodeIcon() {
 export function PraktikanTabBar(props: TabBarProps) {
   const { state } = props;
   const insets = useSafeAreaInsets();
-  const currentUserId = useAppStore((store) => store.currentUserId);
-  const sessions = useSessionsForUser(currentUserId ?? '');
+  const currentUser = useCurrentUser();
+  const sessions = useSessionsForUser(currentUser?.id ?? '');
   const [sheetVisible, setSheetVisible] = useState(false);
 
   function handleCenterPress() {
-    // Cari sesi yang sedang dibuka
     const openSession = sessions.find((s) => s.status === 'open');
     if (openSession) {
       router.push({
@@ -87,7 +95,9 @@ export function PraktikanTabBar(props: TabBarProps) {
     } else if (props.navigation) {
       props.navigation.navigate(route.name);
     } else {
-      router.push(route.name === 'jadwal' ? '/praktikan/jadwal' : '/praktikan/riwayat');
+      if (route.name === 'jadwal') router.push('/praktikan/jadwal');
+      else if (route.name === 'izin') router.push('/praktikan/izin');
+      else router.push('/praktikan/riwayat');
     }
   }
 
@@ -96,22 +106,15 @@ export function PraktikanTabBar(props: TabBarProps) {
       <View style={[styles.barContainer, { paddingBottom: Math.max(insets.bottom, spacing.xs) }]}>
         {/* Tab 1: Jadwal */}
         {(() => {
-          const isFocused = state.index === 0;
-          const route = state.routes[0];
+          const route = state.routes.find((r) => r.name === 'jadwal');
           if (!route) return null;
-
-          const onPress = () => {
-            if (!isFocused) {
-              handleNavigate(route);
-            }
-          };
-
+          const isFocused = state.routes[state.index]?.name === 'jadwal';
           const tintColor = isFocused ? colors.primary : colors.textMuted;
 
           return (
             <Pressable
               key={route.key}
-              onPress={onPress}
+              onPress={() => !isFocused && handleNavigate(route)}
               role="tab"
               aria-selected={isFocused}
               aria-label="Jadwal praktikum"
@@ -130,7 +133,36 @@ export function PraktikanTabBar(props: TabBarProps) {
           );
         })()}
 
-        {/* Tombol Bulat Tengah Sadar-Konteks: "Isi kode" */}
+        {/* Tab 2: Izin (BARU Sprint 2) */}
+        {(() => {
+          const route = state.routes.find((r) => r.name === 'izin');
+          if (!route) return null;
+          const isFocused = state.routes[state.index]?.name === 'izin';
+          const tintColor = isFocused ? colors.primary : colors.textMuted;
+
+          return (
+            <Pressable
+              key={route.key}
+              onPress={() => !isFocused && handleNavigate(route)}
+              role="tab"
+              aria-selected={isFocused}
+              aria-label="Pengajuan izin"
+              style={({ pressed }) => [
+                styles.tabItem,
+                pressed && { opacity: PRESSED_OPACITY },
+              ]}
+            >
+              <View style={[styles.iconPill, isFocused && styles.iconPillActive]}>
+                <DocumentIcon color={tintColor} />
+              </View>
+              <Text style={[styles.tabLabel, isFocused && styles.tabLabelActive]}>
+                Izin
+              </Text>
+            </Pressable>
+          );
+        })()}
+
+        {/* Tombol Bulat Tengah: Isi Kode */}
         <Pressable
           onPress={handleCenterPress}
           role="button"
@@ -146,24 +178,17 @@ export function PraktikanTabBar(props: TabBarProps) {
           <Text style={styles.centerButtonLabel}>Isi kode</Text>
         </Pressable>
 
-        {/* Tab 2: Riwayat */}
+        {/* Tab 3: Riwayat */}
         {(() => {
-          const isFocused = state.index === 1;
-          const route = state.routes[1];
+          const route = state.routes.find((r) => r.name === 'riwayat');
           if (!route) return null;
-
-          const onPress = () => {
-            if (!isFocused) {
-              handleNavigate(route);
-            }
-          };
-
+          const isFocused = state.routes[state.index]?.name === 'riwayat';
           const tintColor = isFocused ? colors.primary : colors.textMuted;
 
           return (
             <Pressable
               key={route.key}
-              onPress={onPress}
+              onPress={() => !isFocused && handleNavigate(route)}
               role="tab"
               aria-selected={isFocused}
               aria-label="Riwayat presensi"
@@ -193,7 +218,7 @@ export function PraktikanTabBar(props: TabBarProps) {
         }}
       >
         <Text style={styles.sheetBody}>
-          Belum ada sesi yang dibuka. Cek jadwal.
+          Belum ada sesi praktikum kelasmu yang sedang dibuka saat ini. Silakan periksa tab Jadwal.
         </Text>
       </BottomSheet>
     </>
@@ -203,12 +228,13 @@ export function PraktikanTabBar(props: TabBarProps) {
 const styles = StyleSheet.create({
   barContainer: {
     flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     backgroundColor: colors.surface,
     borderTopWidth: 1,
     borderTopColor: colors.border,
     paddingTop: spacing.xs,
-    alignItems: 'center',
-    justifyContent: 'space-around',
+    paddingHorizontal: spacing.sm,
   },
   tabItem: {
     flex: 1,
@@ -218,18 +244,16 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   iconPill: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: 3,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
     borderRadius: radius.full,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   iconPillActive: {
-    backgroundColor: 'rgba(0, 20, 74, 0.08)',
+    backgroundColor: '#E0E8FB',
   },
   tabLabel: {
-    fontSize: typography.caption.fontSize,
-    lineHeight: 14,
+    ...typography.caption,
+    fontSize: 11,
     color: colors.textMuted,
   },
   tabLabelActive: {
@@ -239,108 +263,121 @@ const styles = StyleSheet.create({
   centerButtonWrapper: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: -24,
-    minHeight: layout.minTouch,
-    minWidth: layout.minTouch,
-    paddingHorizontal: spacing.sm,
+    marginTop: -spacing.lg,
+    paddingHorizontal: spacing.xs,
   },
   centerButtonCircle: {
-    width: 54,
-    height: 54,
-    borderRadius: 27,
+    width: 48,
+    height: 48,
+    borderRadius: radius.full,
     backgroundColor: colors.primary,
-    borderWidth: 3.5,
-    borderColor: colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 3,
+    borderColor: colors.surface,
   },
   centerButtonLabel: {
-    fontSize: typography.caption.fontSize,
-    lineHeight: 14,
-    fontWeight: '600',
+    ...typography.caption,
+    fontSize: 10,
+    fontWeight: '700',
     color: colors.primary,
     marginTop: 2,
   },
   iconFrame: {
-    width: 24,
-    height: 24,
+    width: 22,
+    height: 22,
     alignItems: 'center',
     justifyContent: 'center',
   },
   calendarBody: {
     width: 18,
     height: 18,
+    borderRadius: 4,
     borderWidth: 1.5,
-    borderRadius: 3,
-    position: 'relative',
     overflow: 'hidden',
+    alignItems: 'center',
   },
   calendarTopBar: {
-    height: 4,
     width: '100%',
+    height: 4,
   },
   calendarDotsRow: {
     flexDirection: 'row',
     gap: 3,
     marginTop: 3,
-    justifyContent: 'center',
   },
   calendarDot: {
-    width: 2.5,
-    height: 2.5,
+    width: 3,
+    height: 3,
+    borderRadius: 1,
+  },
+  docBody: {
+    width: 16,
+    height: 19,
+    borderRadius: 3,
+    borderWidth: 1.5,
+    padding: 2,
+    gap: 3,
+    justifyContent: 'center',
+  },
+  docLine: {
+    width: 8,
+    height: 2,
+    borderRadius: 1,
+  },
+  docLineShort: {
+    width: 5,
+    height: 2,
     borderRadius: 1,
   },
   clockCircle: {
     width: 18,
     height: 18,
+    borderRadius: radius.full,
     borderWidth: 1.5,
-    borderRadius: 9,
     alignItems: 'center',
     justifyContent: 'center',
-    position: 'relative',
   },
   clockHourHand: {
     position: 'absolute',
     width: 1.5,
-    height: 4,
+    height: 5,
     top: 4,
-    borderRadius: 1,
   },
   clockMinuteHand: {
     position: 'absolute',
-    width: 3.5,
+    width: 5,
     height: 1.5,
-    left: 8,
-    borderRadius: 1,
+    right: 4,
   },
   keyIconFrame: {
-    width: 24,
-    height: 24,
+    width: 20,
+    height: 20,
     alignItems: 'center',
     justifyContent: 'center',
   },
   keyMiniGrid: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    width: 14,
+    height: 14,
     gap: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  keyMiniCell: {
-    width: 4.5,
-    height: 8,
-    borderRadius: 1,
-    backgroundColor: colors.accent,
-    opacity: 0.5,
   },
   keyMiniCellActive: {
     width: 5,
-    height: 10,
+    height: 5,
     borderRadius: 1,
     backgroundColor: colors.accent,
   },
+  keyMiniCell: {
+    width: 5,
+    height: 5,
+    borderRadius: 1,
+    backgroundColor: colors.onPrimary,
+    opacity: 0.7,
+  },
   sheetBody: {
-    fontSize: typography.body.fontSize,
-    lineHeight: typography.body.lineHeight,
+    ...typography.body,
     color: colors.text,
   },
 });

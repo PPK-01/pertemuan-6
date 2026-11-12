@@ -1,6 +1,5 @@
 import { Redirect, Stack } from 'expo-router';
-
-import { useAppStore } from '@/store/appStore';
+import { useCurrentUser } from '@/store/appStore';
 import { colors } from '@/theme/colors';
 
 export const unstable_settings = {
@@ -8,11 +7,10 @@ export const unstable_settings = {
 };
 
 export default function PraktikanLayout() {
-  const role = useAppStore((state) => state.role);
-  const currentUserId = useAppStore((state) => state.currentUserId);
+  const currentUser = useCurrentUser();
 
-  if (role !== 'praktikan' || !currentUserId) {
-    return <Redirect href="/" />;
+  if (!currentUser || currentUser.role !== 'praktikan') {
+    return <Redirect href="/(auth)/login" />;
   }
 
   return (
@@ -24,6 +22,8 @@ export default function PraktikanLayout() {
     >
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="sesi/[id]" options={{ headerShown: false }} />
+      <Stack.Screen name="izin/baru" options={{ headerShown: false }} />
+      <Stack.Screen name="izin/[id]" options={{ headerShown: false }} />
     </Stack>
   );
 }

@@ -1,5 +1,4 @@
 import { Tabs } from 'expo-router';
-
 import { PraktikanTabBar } from '@/features/praktikan/PraktikanTabBar';
 
 export default function PraktikanTabsLayout() {
@@ -14,6 +13,12 @@ export default function PraktikanTabsLayout() {
         name="jadwal"
         options={{
           title: 'Jadwal',
+        }}
+      />
+      <Tabs.Screen
+        name="izin"
+        options={{
+          title: 'Izin',
         }}
       />
       <Tabs.Screen

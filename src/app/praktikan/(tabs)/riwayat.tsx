@@ -11,10 +11,11 @@ import {
   useAppStore,
   useAttendanceByUser,
   useCurrentUser,
+  useIzinByUser,
   useSessionsForUser,
 } from '@/store/appStore';
 import { colors } from '@/theme/colors';
-import { spacing } from '@/theme/spacing';
+import { radius, spacing } from '@/theme/spacing';
 import { typography } from '@/theme/typography';
 import type { Attendance, Session } from '@/types';
 
@@ -27,9 +28,15 @@ function ListSeparator() {
 export default function RiwayatScreen() {
   const currentUser = useCurrentUser();
   const userId = currentUser?.id ?? '';
-  const resetIdentity = useAppStore((state) => state.resetIdentity);
+  const logout = useAppStore((state) => state.logout);
   const sessions = useSessionsForUser(userId);
   const attendances = useAttendanceByUser(userId);
+  const izinList = useIzinByUser(userId);
+
+  const approvedIzinCount = useMemo(
+    () => izinList.filter((i) => i.status === 'approved').length,
+    [izinList],
+  );
 
   const entries = useMemo<RiwayatEntry[]>(() => {
     const attendanceBySession = new Map(
@@ -44,6 +51,11 @@ export default function RiwayatScreen() {
       .sort((a, b) => b.attendance.timestamp.localeCompare(a.attendance.timestamp));
   }, [sessions, attendances]);
 
+  async function handleLogout() {
+    await logout();
+    router.replace('/(auth)/login');
+  }
+
   if (!currentUser) {
     return (
       <View style={styles.container}>
@@ -51,7 +63,8 @@ export default function RiwayatScreen() {
         <Screen edges={['left', 'right', 'bottom']}>
           <EmptyState
             title="Identitas tidak ditemukan"
-            message="Kembali ke halaman awal untuk memilih peran dan identitas."
+            message="Silakan masuk kembali ke akun praktikan."
+            action={{ label: 'Masuk', onPress: () => router.replace('/(auth)/login') }}
           />
         </Screen>
       </View>
@@ -60,7 +73,7 @@ export default function RiwayatScreen() {
 
   return (
     <View style={styles.container}>
-      <AppBar subtitle="Riwayat" />
+      <AppBar subtitle="Riwayat Kehadiran" />
 
       <Screen scroll={false} edges={['left', 'right']}>
         <View style={styles.screenInner}>
@@ -80,24 +93,33 @@ export default function RiwayatScreen() {
                 <IdentityCard
                   name={currentUser.name}
                   keyInfo={currentUser.kelas ? `Kelas ${currentUser.kelas}` : 'Praktikan'}
-                  supportingInfo="Praktikan"
-                  onGantiPeran={resetIdentity}
+                  supportingInfo="Laboratorium Komputer"
+                  actionLabel="Keluar"
+                  onAction={handleLogout}
                 />
 
-                {/* Kalimat Ringkasan */}
-                <View style={styles.summaryBox}>
-                  <Text style={styles.summaryText}>
-                    {`${entries.length} sesi tercatat hadir.`}
-                  </Text>
+                {/* Ringkasan Kehadiran & Izin (FR-11) */}
+                <View style={styles.summaryContainer}>
+                  <View style={styles.summaryBox}>
+                    <Text style={styles.summaryNumber}>{entries.length}</Text>
+                    <Text style={styles.summaryLabel}>Tercatat Hadir</Text>
+                  </View>
+
+                  <View style={[styles.summaryBox, styles.summaryBoxIzin]}>
+                    <Text style={[styles.summaryNumber, styles.summaryNumberIzin]}>
+                      {approvedIzinCount}
+                    </Text>
+                    <Text style={styles.summaryLabel}>Izin Disetujui</Text>
+                  </View>
                 </View>
               </View>
             }
             ListEmptyComponent={
               <EmptyState
                 title="Belum ada presensi"
-                message="Belum ada presensi. Isi kode di sesi yang sedang dibuka."
+                message="Kamu belum memiliki rekaman kehadiran. Masukkan kode 4 digit pada sesi praktikum yang sedang dibuka."
                 action={{
-                  label: 'Lihat jadwal',
+                  label: 'Lihat Jadwal',
                   onPress: () => router.push('/praktikan/jadwal'),
                 }}
               />
@@ -118,27 +140,45 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   listContent: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.xxl + 40,
+    padding: spacing.lg,
+    paddingBottom: spacing.xxl * 2,
+    gap: spacing.sm,
   },
   headerBlock: {
     gap: spacing.md,
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
+  },
+  summaryContainer: {
+    flexDirection: 'row',
+    gap: spacing.md,
   },
   summaryBox: {
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
+    flex: 1,
     backgroundColor: colors.surface,
-    borderRadius: 10,
-    borderWidth: 1,
     borderColor: colors.border,
+    borderWidth: 1,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    alignItems: 'center',
+    gap: 2,
   },
-  summaryText: {
-    fontSize: typography.body.fontSize,
-    fontWeight: '600',
-    color: colors.text,
+  summaryBoxIzin: {
+    backgroundColor: '#F7F8FC',
+  },
+  summaryNumber: {
+    ...typography.display,
+    fontSize: 28,
+    fontWeight: '700',
+    color: colors.primary,
     fontVariant: ['tabular-nums'],
+  },
+  summaryNumberIzin: {
+    color: '#1B2F8F',
+  },
+  summaryLabel: {
+    ...typography.caption,
+    color: colors.textMuted,
+    fontWeight: '600',
   },
   separator: {
     height: spacing.sm,
