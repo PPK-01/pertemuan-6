@@ -6,13 +6,13 @@ import { radius, spacing } from '@/theme/spacing';
 import { typography } from '@/theme/typography';
 
 export type CodeDisplayProps = {
-  code: string;
+  code?: string;
   hint?: string;
   style?: StyleProp<ViewStyle>;
 };
 
 export function CodeDisplay({
-  code,
+  code = '----',
   hint = 'Bagikan kode ini ke kelas.',
   style,
 }: CodeDisplayProps) {
