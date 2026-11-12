@@ -9,7 +9,9 @@ export type IdentityCardProps = {
   name: string;
   keyInfo: string;
   supportingInfo: string;
-  onGantiPeran: () => void;
+  actionLabel?: string;
+  onAction?: () => void;
+  onGantiPeran?: () => void;
 };
 
 function getInitials(name: string): string {
@@ -23,9 +25,12 @@ export function IdentityCard({
   name,
   keyInfo,
   supportingInfo,
+  actionLabel = 'Keluar',
+  onAction,
   onGantiPeran,
 }: IdentityCardProps) {
   const initials = getInitials(name);
+  const handlePress = onAction || onGantiPeran;
 
   return (
     <View style={styles.card}>
@@ -34,17 +39,19 @@ export function IdentityCard({
           <Text style={styles.avatarText}>{initials}</Text>
         </View>
 
-        <Pressable
-          onPress={onGantiPeran}
-          role="button"
-          aria-label="Ganti peran"
-          style={({ pressed }) => [
-            styles.gantiButton,
-            pressed && { opacity: PRESSED_OPACITY },
-          ]}
-        >
-          <Text style={styles.gantiButtonText}>Ganti peran</Text>
-        </Pressable>
+        {handlePress ? (
+          <Pressable
+            onPress={handlePress}
+            role="button"
+            aria-label={actionLabel}
+            style={({ pressed }) => [
+              styles.actionButton,
+              pressed && { opacity: PRESSED_OPACITY },
+            ]}
+          >
+            <Text style={styles.actionButtonText}>{actionLabel}</Text>
+          </Pressable>
+        ) : null}
       </View>
 
       <View style={styles.infoBlock}>
@@ -63,31 +70,29 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     borderRadius: radius.identity,
     padding: spacing.lg,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    gap: spacing.md,
   },
   topRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: spacing.md,
+    justifyContent: 'space-between',
   },
   avatar: {
     width: 48,
     height: 48,
     borderRadius: radius.full,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    borderWidth: 1.5,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderWidth: 2,
     borderColor: colors.accent,
     alignItems: 'center',
     justifyContent: 'center',
   },
   avatarText: {
-    fontSize: 16,
-    fontWeight: '700',
+    ...typography.title,
     color: colors.onPrimary,
+    fontWeight: '700',
   },
-  gantiButton: {
+  actionButton: {
     minHeight: layout.minTouch,
     paddingHorizontal: spacing.md,
     borderRadius: radius.full,
@@ -96,29 +101,27 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  gantiButtonText: {
-    fontSize: typography.caption.fontSize,
-    fontWeight: typography.label.fontWeight,
+  actionButtonText: {
+    ...typography.label,
     color: colors.onPrimary,
+    fontWeight: '600',
   },
   infoBlock: {
-    gap: 3,
+    gap: 2,
   },
   name: {
-    fontSize: 20,
-    lineHeight: 26,
-    fontWeight: '700',
+    ...typography.title,
     color: colors.onPrimary,
+    fontWeight: '700',
   },
   keyInfo: {
-    fontSize: typography.label.fontSize,
-    fontWeight: typography.label.fontWeight,
+    ...typography.label,
     color: colors.accent,
+    fontWeight: '600',
   },
   supportingInfo: {
-    fontSize: typography.caption.fontSize,
-    lineHeight: typography.caption.lineHeight,
+    ...typography.caption,
     color: colors.onPrimary,
-    opacity: 0.85,
+    opacity: 0.8,
   },
 });

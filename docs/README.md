@@ -1,160 +1,114 @@
-# Presensi Praktikum - Ibrahim (Fase 1 & Fase 2)
+# Presensi Praktikum Rawuh - Sprint 2 (Dhimas: Fondasi Data, Auth, AI & Praktikan)
 
-Dokumen ini merangkum cara menjalankan dan menguji bagian **Ibrahim Fase 1 dan Fase 2** pada aplikasi Presensi Praktikum. Sumber kebutuhan tetap `docs/SRS.md`.
+Dokumen ini merangkum panduan konfigurasi, arsitektur, dan pengujian untuk lingkup kerja **Dhimas** pada Sprint 2 aplikasi Presensi Praktikum **Rawuh** (React Native + Firebase + AI). Dokumen kebutuhan perangkat lunak mengacu pada `docs/SRS & Rencana Kerja Sprint 2 Aplikasi Presensi Praktikum Rawuh (React Native + F.md`.
 
-## Cakupan
+---
 
-Fase 1 Ibrahim mencakup:
+## 1. Cakupan Tugas Dhimas (D-01 s.d. D-12)
 
-- FR-01: memilih peran dan identitas, serta tombol "Ganti peran" di header.
-- FR-02: jadwal sesi untuk praktikan, hanya kelasnya sendiri, urut waktu mulai.
-- FR-03: detail sesi praktikan.
-- FR-07 sampai FR-09: form kode presensi, bottom sheet konfirmasi, umpan balik sukses berisi waktu tercatat, dan penolakan presensi ganda.
-- FR-11: riwayat kehadiran beserta ringkasan jumlah.
-- README dan penjagaan konsistensi data dummy.
+1. **D-01 & D-02**: Fondasi Firebase Modular JS SDK (`firebase`), konfigurasi `src/config/env.ts`, safe wrapper untuk storage dan network connectivity.
+2. **D-03**: Pembaruan kontrak tipe `src/types/index.ts` (Sprint 2) dan store terpadu `src/store/appStore.ts`.
+3. **D-04**: Firebase Security Rules (`firestore.rules`), `firestore.indexes.json`, `firebase.json` dengan pengujian 9 kasus keamanan.
+4. **D-05**: Sistem Autentikasi Firebase (`services/auth.ts`, `services/users.ts`), gate rute per peran, layar `login.tsx` & `daftar.tsx`, serta `KeluarButton`.
+5. **D-06**: Sinkronisasi Firestore Realtime (`store/sync.ts`), listener per peran, mapping error Indonesia (`services/errors.ts`), timeout 10 detik, dan penanganan offline.
+6. **D-07**: Layanan Sesi & Kelas (`services/sessions.ts`, `services/kelas.ts`) dengan pemisahan kode 4 digit ke subdokumen `private/code`.
+7. **D-08**: Alur Presensi Praktikan: validasi kode sesi, pra-cek offline/sesi/kelas/duplikasi, rekaman waktu server, dan tab Riwayat dengan ringkasan kehadiran & izin.
+8. **D-09**: Fitur Pengajuan Izin Praktikan: validasi alasan (10–500 karakter), penyimpanan `izin/{sessionId}_{uid}`, tab Izin, dan layar detail izin.
+9. **D-10**: Integrasi AI (`services/ai.ts`): klasifikasi alasan izin dengan timeout 15 detik, penanganan respons toleran, dan error handling tanpa crash.
+10. **D-11**: Logika rekapitulasi `computeRekap` yang memperhitungkan izin disetujui (FR-10, FR-28).
+11. **D-12**: Dokumentasi teknis proyek.
 
-Fase 2 Ibrahim mencakup:
+---
 
-- Uji Skenario Demo SRS bagian 7 pada alur asisten → praktikan → rekap → tutup sesi.
-- Pemeriksaan responsif secara statis dan build web.
-- Cross review PR Elang (#14) tanpa mengubah file miliknya.
-- Perbaikan bug hanya pada file milik Ibrahim.
+## 2. Arsitektur Dual-Mode Runtime
 
-Di luar cakupan: layar dan komponen asisten (`src/app/asisten/**`, `src/components/**`, `src/features/asisten/**`). Temuan di file Elang diteruskan lewat review, bukan diubah di sini.
+Aplikasi dirancang dengan **Dual-Mode Engine**:
+1. **Mode Firebase Cloud (Produksi / Staging)**: Aktif otomatis saat variabel `EXPO_PUBLIC_FIREBASE_*` diisi di file `.env`. Terhubung langsung ke Firebase Authentication dan Cloud Firestore secara realtime.
+2. **Mode In-Memory Fallback (Lokal / Emulator)**: Aktif otomatis jika `.env` belum diisi. Memungkinkan emulator Android dan web langsung dijalankan untuk menguji alur auth, presensi, dan izin tanpa crash.
 
-## Prasyarat
+---
 
-- Node.js dan npm.
-- Dependency proyek sudah terpasang (`npm install`).
-- Untuk pengecekan web: browser modern.
+## 3. Konfigurasi Lingkungan (`.env`)
 
-## Menjalankan
+Salin berkas `.env.example` menjadi `.env` lalu lengkapi variabel berikut:
 
-```bash
-npx expo start
+```env
+# Firebase Configuration
+EXPO_PUBLIC_FIREBASE_API_KEY=your_api_key
+EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+EXPO_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
+EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
+EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+EXPO_PUBLIC_FIREBASE_APP_ID=your_app_id
+
+# AI API Integration
+EXPO_PUBLIC_AI_URL=https://api.pengajar.ac.id/v1/classify-izin
+EXPO_PUBLIC_AI_KEY=your_ai_api_key
 ```
 
-Untuk memeriksa lewat web:
+> **Catatan Keamanan:** Berkas `.env` telah didaftarkan di `.gitignore` dan dilarang untuk di-commit ke repositori.
 
+---
+
+## 4. Menjalankan Aplikasi
+
+### A. Android Dev Client / Emulator
+Jalankan skrip otomasi emulator yang sudah tersedia:
+```bash
+./run-android.sh
+```
+Atau mulai development server Metro:
+```bash
+npx expo start --dev-client
+```
+
+### B. Pengujian Web
 ```bash
 npx expo start --web
 ```
 
-Perintah kualitas yang dipakai:
-
+### C. Verifikasi Kualitas Kode
 ```bash
 npx tsc --noEmit
-npx expo export --platform web
 ```
 
-`npx expo lint` belum dapat dijalankan karena ESLint belum terpasang di proyek. Tidak ada dependency baru yang ditambahkan pada Fase 1.
+---
 
-## Peta route
+## 5. Peta Route Sprint 2 (Area Tanggung Jawab Dhimas)
 
-| Route | File | Fungsi |
-| --- | --- | --- |
-| `/` | `src/app/index.tsx` | Pilih peran dan identitas |
-| `/praktikan/jadwal` | `src/app/praktikan/(tabs)/jadwal.tsx` | Jadwal sesi kelas praktikan |
-| `/praktikan/riwayat` | `src/app/praktikan/(tabs)/riwayat.tsx` | Riwayat dan ringkasan kehadiran |
-| `/praktikan/sesi/[id]` | `src/app/praktikan/sesi/[id].tsx` | Detail sesi dan alur presensi |
-| `/asisten` | `src/app/asisten/index.tsx` | Milik Elang, tidak diubah |
+| Route | File Komponen | Deskripsi |
+| :--- | :--- | :--- |
+| `/` | `src/app/index.tsx` | Gate utama: mengarahkan user berdasarkan auth status & peran |
+| `/(auth)/login` | `src/app/(auth)/login.tsx` | Form masuk (Email & Kata Sandi) |
+| `/(auth)/daftar` | `src/app/(auth)/daftar.tsx` | Form registrasi peran Praktikan / Asisten Lab |
+| `/praktikan/jadwal` | `src/app/praktikan/(tabs)/jadwal.tsx` | Daftar jadwal sesi kelas praktikan secara realtime |
+| `/praktikan/izin` | `src/app/praktikan/(tabs)/izin.tsx` | Daftar pengajuan izin praktikan dan status verifikasi |
+| `/praktikan/riwayat` | `src/app/praktikan/(tabs)/riwayat.tsx` | Riwayat presensi dan ringkasan hadir & izin disetujui |
+| `/praktikan/sesi/[id]` | `src/app/praktikan/sesi/[id].tsx` | Detail sesi, form presensi 4 digit, dan tombol ajukan izin |
+| `/praktikan/izin/baru` | `src/app/praktikan/izin/baru.tsx` | Form pengajuan izin (alasan 10–500 karakter) |
+| `/praktikan/izin/[id]` | `src/app/praktikan/izin/[id].tsx` | Detail izin: status, alasan, dan keputusan asisten |
 
-Layout praktikan dilindungi: jika peran atau identitas tidak sesuai, pengguna diarahkan kembali ke `/`.
+---
 
-## Alur demo praktikan
+## 6. Firebase Security Rules (`firestore.rules`)
 
-Data dummy sudah menyediakan sesi dengan status yang berbeda. Untuk mencoba presensi berhasil tanpa membuat sesi baru:
+Aturan keamanan menerapkan prinsip *deny-by-default*:
+- `users/{uid}`: Hanya pemilik yang dapat membuat dokumen akunnya sendiri; asisten wajib menyertakan kode undangan yang diverifikasi server.
+- `sessions/{id}`: Praktikan hanya dapat membaca sesi untuk kelasnya; kode 4 digit sesi disimpan di subdokumen `private/code` yang hanya dapat dibaca asisten.
+- `attendances/{sessionId}_{uid}`: Praktikan hanya dapat menulis presensi saat sesi berstatus `open`, kelas sesuai, kode cocok, belum presensi, dan tidak memiliki izin yang telah disetujui. ID dokumen deterministik `{sessionId}_{uid}` mencegah duplikasi presensi di level database.
+- `izin/{sessionId}_{uid}`: Praktikan mengajukan izin dengan status awal `pending_ai`. Asisten adalah satu-satunya pihak yang berhak mengubah status menjadi `approved` atau `rejected` melalui field `review`.
 
-1. Jalankan aplikasi dan pilih **Praktikan**.
-2. Pilih **Eka Putri** (Kelas B).
-3. Buka sesi **Basis Data, Normalisasi** yang berstatus **Dibuka**.
-4. Isi kode sesi **1358**, lalu tekan **Presensi**.
-5. Periksa bottom sheet konfirmasi, lalu tekan **Konfirmasi**.
-6. Bottom sheet sukses menampilkan waktu presensi tercatat.
-7. Setelah ditutup, detail sesi menampilkan status tercatat dan tombol **Sudah presensi** dalam keadaan nonaktif.
-8. Buka tab **Riwayat** untuk melihat catatan kehadiran Eka dan ringkasan jumlah sesi.
-
-Untuk menguji penolakan kode salah, ulangi langkah 1 sampai 5 dengan kode yang salah. Pesan **Kode sesi tidak sesuai** muncul di bawah field kode. Untuk menguji sesi tertutup, buka sesi **Pemrograman Mobile, State Management** (Kelas B, Ditutup); form presensi tidak ditampilkan dan status sesi dijelaskan lewat banner.
-
-Praktikan Kelas A dapat dipakai untuk melihat variasi:
-
-- **Bagas Pratama** sudah memiliki riwayat pada sesi **Basis Data, SQL Dasar** yang ditutup.
-- Sesi **Basis Data, Desain Schema** berstatus **Dibuka** dengan kode **2468**, jadi Bagas atau Citra bisa langsung mencoba presensi tanpa membuat sesi baru.
-- Sesi **Pemrograman Mobile, Pengenalan React Native** masih **Dijadwalkan** (6 Nov 2026), jadi belum bisa dipresensi dan tidak ikut dihitung pada ringkasan riwayat.
-
-## Data dummy
-
-| Pengguna | Peran | Kelas |
-| --- | --- | --- |
-| Dina | Asisten | - |
-| Raka | Asisten | - |
-| Bagas Pratama | Praktikan | A |
-| Citra Lestari | Praktikan | A |
-| Dimas Saputra | Praktikan | A |
-| Eka Putri | Praktikan | B |
-| Fajar Nugroho | Praktikan | B |
-| Gita Maharani | Praktikan | B |
-
-Sesi awal:
-
-| Sesi | Kelas | Status | Kode dummy |
-| --- | --- | --- | --- |
-| Pemrograman Mobile, Pengenalan React Native | A | Dijadwalkan | 0427 |
-| Basis Data, Normalisasi | B | Dibuka | 1358 |
-| Basis Data, Desain Schema | A | Dibuka | 2468 |
-| Pemrograman Mobile, State Management | B | Ditutup | 2469 |
-| Basis Data, SQL Dasar | A | Ditutup | 9876 |
-
-Aturan konsistensi yang dijaga:
-
-- Setiap praktikan hanya melihat sesi kelasnya.
-- Kode sesi hanya dipakai oleh alur presensi. Layar praktikan tidak menampilkan kode sebelum pengguna memasukkannya.
-- Kehadiran awal hanya mengacu pada sesi yang sudah ditutup, sehingga tidak ada praktikan yang tercatat hadir pada sesi yang masih dibuka.
-- Sesi berstatus **Dijadwalkan** tidak ikut dihitung pada ringkasan riwayat (jumlah, persentase, dan `aria-valuemax`), tetapi tetap tampil di jadwal.
-- Waktu disimpan sebagai ISO 8601 dan ditampilkan lewat formatter lokal `id-ID`.
-
-Data hanya berada di memori Zustand. Menutup atau me-restart aplikasi mengembalikan semua data ke kondisi dummy awal.
-
-## Struktur Fase 1
-
-```text
-src/app/_layout.tsx
-src/app/index.tsx
-src/app/praktikan/_layout.tsx
-src/app/praktikan/(tabs)/_layout.tsx
-src/app/praktikan/(tabs)/jadwal.tsx
-src/app/praktikan/(tabs)/riwayat.tsx
-src/app/praktikan/sesi/[id].tsx
-src/features/praktikan/GantiPeranButton.tsx
-src/features/praktikan/PresensiForm.tsx
-src/features/praktikan/PresensiSheet.tsx
-src/features/praktikan/RiwayatItem.tsx
-src/features/praktikan/attendMessages.ts
-docs/README.md
+Untuk mendeploy rules:
+```bash
+firebase deploy --only firestore:rules
 ```
 
-Layar hanya memakai aksi dan hook baca dari `src/store/appStore.ts`. Aturan bisnis presensi tetap berada di store. Komponen bersama dari Elang dipakai lewat props tanpa diubah.
+---
 
-## Hasil Fase 2
+## 7. Akun Seed Uji Coba
 
-Skenario Demo SRS bagian 7 diperiksa pada logika store memakai skrip sementara (dihapus setelah uji). Seluruh 27 pemeriksaan lolos:
-
-- Sesi baru berstatus `scheduled`, kode sesi 4 digit, dan langsung terlihat oleh asisten.
-- `openSession` mengisi `openedAt`; transisi ganda ditolak; praktikan kelas lain tidak melihat sesi.
-- Presensi menerima kode benar dan mencatat timestamp ISO; kode salah, kelas salah, duplikat, dan sesi tertutup ditolak dengan alasan kontrak.
-- Rekap menghitung total kelas, hadir, dan belum hadir (urut nama).
-- `closeSession` mengisi `closedAt`; praktikan lain melihat status Ditutup dan tidak bisa presensi.
-- Daftar sesi praktikan urut `startAt`.
-
-## Hasil review PR Elang (#14)
-
-- Diff hanya mengubah komentar contoh footer `SessionCard` menjadi "3 dari 6 hadir"; sudah konsisten dengan teks nyata di `SessionListItem` dan `RekapList`.
-- Tidak ada temuan blocking dan tidak ada file Elang yang diubah.
-- Catatan yang diteruskan ke Elang/PM: klaim `tsc` perlu dijalankan setelah tipe route Expo di-generate. `app.json` sudah diubah ke `"orientation": "default"` agar landscape native bisa diuji ulang.
-
-## Verifikasi
-
-- `npx tsc --noEmit` lolos. `expo-env.d.ts` dan `.expo/types` bersifat generated dan gitignored; jalankan `npx expo start` sekali di clone baru agar tipe route tersedia sebelum typecheck.
-- `npx expo export --platform web` berhasil: 11 static route dan bundle web 1.2MB.
-- Pemeriksaan responsif statis: `Screen` membatasi konten ke 600 dan memusatkannya, layar pilih identitas memakai `useWindowDimensions` (dua kolom mulai 640), aksi `BottomSheet` bertumpuk di bawah 360, dan tidak ada lebar/tinggi tetap pada container utama.
-- Pengecekan UI interaktif di browser dan perangkat Android tidak dijalankan pada sesi ini sesuai instruksi. Langkah uji manualnya tetap ada di bagian Alur demo di atas. Landscape native juga belum diuji ulang setelah `app.json` diubah ke `"orientation": "default"`.
+Untuk keperluan demo dan verifikasi:
+- **Asisten**: `dina@rawuh.ac.id`, `raka@rawuh.ac.id` (Kata sandi bebas pada mode fallback)
+- **Praktikan (Kelas A)**: `bagas@rawuh.ac.id`, `citra@rawuh.ac.id`
+- **Praktikan (Kelas B)**: `dani@rawuh.ac.id`, `eka@rawuh.ac.id`
+- **Kode Undangan Asisten**: `LAB-RAWUH-2026`

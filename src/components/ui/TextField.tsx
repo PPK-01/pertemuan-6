@@ -18,6 +18,7 @@ export type TextFieldProps = {
   keyboardType?: TextInputProps['keyboardType'];
   maxLength?: number;
   autoCapitalize?: TextInputProps['autoCapitalize'];
+  secureTextEntry?: boolean;
   /** Khusus layout (margin, flex, alignSelf), bukan warna/ukuran. */
   style?: StyleProp<ViewStyle>;
 };
@@ -36,6 +37,7 @@ export function TextField({
   keyboardType,
   maxLength,
   autoCapitalize,
+  secureTextEntry,
   style,
 }: TextFieldProps) {
   const [focused, setFocused] = useState(false);
@@ -55,6 +57,7 @@ export function TextField({
         keyboardType={keyboardType}
         maxLength={maxLength}
         autoCapitalize={autoCapitalize}
+        secureTextEntry={secureTextEntry}
         aria-label={label}
         aria-describedby={message ? `${label}-hint` : undefined}
         aria-invalid={hasError}
