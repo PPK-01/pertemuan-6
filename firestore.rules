@@ -1,0 +1,98 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{db}/documents {
+    function uid() { return request.auth.uid; }
+    function signedIn() { return request.auth != null; }
+    function hasProfile() { return signedIn() && exists(/databases/$(db)/documents/users/$(uid())); }
+    function me() { return get(/databases/$(db)/documents/users/$(uid())).data; }
+    function isAsisten() { return hasProfile() && me().role == 'asisten'; }
+    function isPraktikan() { return hasProfile() && me().role == 'praktikan'; }
+    function sessionOf(sid) { return get(/databases/$(db)/documents/sessions/$(sid)).data; }
+    function changedOnly(keys) { return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys); }
+
+    match /config/{d} { 
+      allow read, write: if false; 
+    }
+
+    match /users/{id} {
+      allow read: if signedIn() && (uid() == id || isAsisten());
+      allow create: if signedIn() && uid() == id
+        && request.resource.data.keys().hasOnly(['name','email','role','kelas','inviteCode','createdAt'])
+        && request.resource.data.name is string && request.resource.data.name.size() >= 2
+        && request.resource.data.name.size() <= 50
+        && (request.resource.data.role == 'praktikan'
+              ? request.resource.data.kelas is string
+              : (request.resource.data.role == 'asisten'
+                  && request.resource.data.inviteCode
+                     == get(/databases/$(db)/documents/config/asisten).data.inviteCode));
+      allow update: if signedIn() && uid() == id && changedOnly(['name']);
+      allow delete: if false;
+    }
+
+    match /kelasPraktikum/{id} {
+      allow read: if true;
+      allow create, update, delete: if isAsisten();
+    }
+
+    match /sessions/{sid} {
+      allow read: if isAsisten() || (isPraktikan() && resource.data.kelas == me().kelas);
+      allow create: if isAsisten() && request.resource.data.status == 'scheduled'
+        && request.resource.data.createdBy == uid()
+        && request.resource.data.startAt < request.resource.data.endAt;
+      allow update: if isAsisten()
+        && request.resource.data.createdBy == resource.data.createdBy
+        && request.resource.data.startAt < request.resource.data.endAt
+        && ((resource.data.status == request.resource.data.status && resource.data.status != 'closed')
+            || (resource.data.status == 'scheduled' && request.resource.data.status == 'open')
+            || (resource.data.status == 'open' && request.resource.data.status == 'closed'));
+      allow delete: if isAsisten() && resource.data.status == 'scheduled';
+      
+      match /private/{d} { 
+        allow read, write: if isAsisten(); 
+      }
+    }
+
+    match /attendances/{aid} {
+      allow read: if isAsisten() || (signedIn() && resource.data.userId == uid());
+      allow create: if isPraktikan()
+        && request.resource.data.keys().hasOnly(['sessionId','userId','kelas','code','timestamp'])
+        && aid == request.resource.data.sessionId + '_' + uid()
+        && request.resource.data.userId == uid()
+        && request.resource.data.kelas == me().kelas
+        && request.resource.data.timestamp == request.time
+        && sessionOf(request.resource.data.sessionId).status == 'open'
+        && sessionOf(request.resource.data.sessionId).kelas == me().kelas
+        && request.resource.data.code ==
+           get(/databases/$(db)/documents/sessions/$(request.resource.data.sessionId)/private/code).data.code
+        && !(exists(/databases/$(db)/documents/izin/$(aid))
+             && get(/databases/$(db)/documents/izin/$(aid)).data.status == 'approved');
+      allow update, delete: if false;
+    }
+
+    match /izin/{iid} {
+      allow read: if isAsisten() || (signedIn() && resource.data.userId == uid());
+      allow create: if isPraktikan()
+        && request.resource.data.keys().hasOnly(['sessionId','userId','userName','kelas','alasan','status','createdAt','updatedAt'])
+        && iid == request.resource.data.sessionId + '_' + uid()
+        && request.resource.data.userId == uid()
+        && request.resource.data.kelas == me().kelas
+        && request.resource.data.status == 'pending_ai'
+        && request.resource.data.alasan is string
+        && request.resource.data.alasan.size() >= 10 && request.resource.data.alasan.size() <= 500
+        && sessionOf(request.resource.data.sessionId).status in ['scheduled', 'open']
+        && sessionOf(request.resource.data.sessionId).kelas == me().kelas
+        && !exists(/databases/$(db)/documents/attendances/$(iid));
+      allow update: if (isAsisten() || resource.data.userId == uid())
+        && resource.data.status in ['pending_ai', 'pending_review']
+        && request.resource.data.status == 'pending_review'
+        && changedOnly(['status', 'ai', 'updatedAt']);
+      allow update: if isAsisten()
+        && resource.data.status in ['pending_ai', 'pending_review']
+        && request.resource.data.status in ['approved', 'rejected']
+        && request.resource.data.review.reviewedBy == uid()
+        && request.resource.data.review.keputusan == request.resource.data.status
+        && changedOnly(['status', 'review', 'updatedAt']);
+      allow delete: if false;
+    }
+  }
+}

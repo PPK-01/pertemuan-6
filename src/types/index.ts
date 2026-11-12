@@ -1,28 +1,55 @@
-// ===== Daftar + tipe turunan =====
-// Satu sumber untuk tipe dan pilihan di UI.
+// ===== Tipe Domain Rawuh - Sprint 2 =====
 
-/** Daftar kelas praktikum. */
+export type Role = 'praktikan' | 'asisten';
+export type Kelas = string;
+export type Praktikum = string;
+
+/** @deprecated Sumber pilihan form Sprint 2 kini berasal dari useKelasList() */
 export const KELAS_LIST = ['A', 'B'] as const;
-export type Kelas = (typeof KELAS_LIST)[number];
-
-/** Daftar mata praktikum. */
+/** @deprecated Sumber pilihan form Sprint 2 kini berasal dari useKelasList() */
 export const PRAKTIKUM_LIST = ['Pemrograman Mobile', 'Basis Data'] as const;
-export type Praktikum = (typeof PRAKTIKUM_LIST)[number];
 
-/** Daftar status sesi. Urutan dipakai chip filter. */
+/** Daftar status sesi praktikum. */
 export const SESSION_STATUS_LIST = ['scheduled', 'open', 'closed'] as const;
 export type SessionStatus = (typeof SESSION_STATUS_LIST)[number];
 
-export type Role = 'praktikan' | 'asisten';
+/** Daftar status izin. */
+export const IZIN_STATUS_LIST = [
+  'pending_ai',
+  'pending_review',
+  'approved',
+  'rejected',
+] as const;
+export type IzinStatus = (typeof IZIN_STATUS_LIST)[number];
+
+/** Daftar kategori analisis izin AI. */
+export const IZIN_KATEGORI_LIST = [
+  'sakit',
+  'keluarga',
+  'akademik',
+  'lainnya',
+  'tidak_jelas',
+] as const;
+export type IzinKategori = (typeof IZIN_KATEGORI_LIST)[number];
 
 // ===== Entitas =====
 
 export type User = {
-  id: string;
+  id: string; // Firebase Auth uid
   name: string;
+  email: string;
   role: Role;
   /** Hanya diisi untuk praktikan. */
   kelas?: Kelas;
+};
+
+export type KelasPraktikum = {
+  id: string;
+  praktikum: string;
+  kelas: string;
+  createdBy: string;
+  createdAt?: string;
+  updatedAt?: string;
 };
 
 export type Session = {
@@ -31,63 +58,133 @@ export type Session = {
   kelas: Kelas;
   topik: string;
   ruang: string;
-  /** ISO 8601 hasil toISOString() (UTC); ditampilkan dalam waktu lokal oleh formatter di utils/time.ts. */
+  /** ISO 8601 (UTC). */
   startAt: string;
-  /** ISO 8601 hasil toISOString() (UTC); ditampilkan dalam waktu lokal oleh formatter di utils/time.ts. */
+  /** ISO 8601 (UTC). */
   endAt: string;
-  /** Status awal selalu 'scheduled'; transisi scheduled -> open -> closed hanya lewat store. */
   status: SessionStatus;
-  /**
-   * 4 digit sebagai string (mis. '0427') agar nol di depan terjaga.
-   * Dibuat store saat createSession; UI asisten hanya menampilkannya saat status 'open'.
-   */
-  code: string;
   /** id User asisten pembuat. */
   createdBy: string;
-  /** ISO 8601 hasil toISOString() (UTC); ditampilkan dalam waktu lokal oleh formatter di utils/time.ts. */
   openedAt?: string;
-  /** ISO 8601 hasil toISOString() (UTC); ditampilkan dalam waktu lokal oleh formatter di utils/time.ts. */
   closedAt?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  /** @deprecated Catatan: field `code` dipindah ke subdokumen private/code di server */
+  code?: string;
 };
 
 export type Attendance = {
-  id: string;
+  id: string; // ${sessionId}_${userId}
   sessionId: string;
   userId: string;
-  /** ISO 8601 (UTC). */
-  timestamp: string;
+  kelas?: string;
+  code?: string;
+  timestamp: string; // ISO 8601 (UTC)
 };
 
-// ===== Hasil presensi =====
+// ===== Analisis AI & Review Izin =====
+
+export type AiErrorCode =
+  | 'NOT_CONFIGURED'
+  | 'NETWORK'
+  | 'TIMEOUT'
+  | 'HTTP_ERROR'
+  | 'RATE_LIMIT'
+  | 'INVALID_RESPONSE';
+
+export type AiResult =
+  | {
+      state: 'success';
+      keputusan: 'diterima' | 'ditolak';
+      kategori: IzinKategori;
+      alasan: string; // penjelasan singkat AI
+      at: string;
+    }
+  | {
+      state: 'failed';
+      errorCode: AiErrorCode;
+      at: string;
+    };
+
+export type IzinReview = {
+  keputusan: 'approved' | 'rejected';
+  catatan?: string;
+  reviewedBy: string;
+  reviewedAt: string;
+};
+
+export type Izin = {
+  id: string; // ${sessionId}_${userId}
+  sessionId: string;
+  userId: string;
+  userName: string;
+  kelas: string;
+  alasan: string;
+  status: IzinStatus;
+  ai?: AiResult;
+  review?: IzinReview;
+  createdAt: string;
+  updatedAt: string;
+};
+
+// ===== Rekap (FR-10, FR-28) =====
+
+export type Rekap = {
+  total: number;
+  /** Urut timestamp kehadiran paling awal di atas. */
+  hadir: { user: User; timestamp: string }[];
+  /** Hanya izin berstatus approved, diurutkan menurut nama user. */
+  izin: { user: User; izin: Izin }[];
+  /** Diurutkan menurut nama; tidak memuat yang hadir atau izin disetujui. */
+  belumHadir: User[];
+};
+
+// ===== Hasil Operasi & Error Handlers =====
+
+export type ErrorCode =
+  | 'NO_CONNECTION'
+  | 'TIMEOUT'
+  | 'PERMISSION_DENIED'
+  | 'NOT_FOUND'
+  | 'INVALID_INPUT'
+  | 'CONFLICT'
+  | 'UNKNOWN';
+
+export type Result<T = void> =
+  | { ok: true; data: T }
+  | { ok: false; code: ErrorCode; message: string };
 
 export type AttendFailReason =
   | 'SESSION_NOT_OPEN'
   | 'ALREADY_ATTENDED'
   | 'INVALID_CODE'
-  | 'NOT_IN_CLASS';
+  | 'NOT_IN_CLASS'
+  | 'IZIN_APPROVED'
+  | 'NO_CONNECTION'
+  | 'TIMEOUT'
+  | 'UNKNOWN';
 
 export type AttendResult =
   | { ok: true; attendance: Attendance }
   | { ok: false; reason: AttendFailReason };
 
-// ===== Rekap (FR-10) =====
+// ===== Input Forms =====
 
-export type Rekap = {
-  /** Jumlah praktikan di kelas sesi. */
-  total: number;
-  /** Urut timestamp, paling awal di atas. */
-  hadir: { user: User; timestamp: string }[];
-  /** Urut nama (alfabetis). */
-  belumHadir: User[];
+export type CreateSessionInput = {
+  praktikum: string;
+  kelas: string;
+  topik: string;
+  ruang: string;
+  startAt: string;
+  endAt: string;
+  createdBy: string;
 };
 
-// ===== Input store =====
-
-/**
- * id, status, code, openedAt, closedAt dibuat oleh store.
- * startAt/endAt sudah berupa ISO; parsing & validasi teks tanggal/jam dilakukan form asisten.
- */
-export type CreateSessionInput = Pick<
-  Session,
-  'praktikum' | 'kelas' | 'topik' | 'ruang' | 'startAt' | 'endAt' | 'createdBy'
->;
+export type RegisterInput = {
+  name: string;
+  email: string;
+  password: string;
+  role: Role;
+  kelas?: string;
+  inviteCode?: string;
+};
